@@ -2,12 +2,18 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CFBundleVersion</key>
+	<string>0.0.1</string>
+	<key>CFBundleName</key>
+	<string>HearthStone Skipper</string>
+	<key>CFBundleIdentifier</key>
+	<string>hearthstone-skiper.z2z63.dev</string>
 	<key>CFBundleDisplayName</key>
 	<string>HearthStone Skipper</string>
 	<key>LSUIElement</key>
 	<true/>
 	<key>CFBundleExecutable</key>
-	<string>ExecutableFileName</string>
+	<string>skipper</string>
 	<key>CFBundleIconFile</key>
 	<string>AppIcon</string>
 </dict>
