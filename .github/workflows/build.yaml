@@ -1,0 +1,33 @@
+name: build and release package
+
+on:
+  push:
+    tags:
+      - "v.*.*.*"
+
+permissions:
+  contents: read
+
+jobs:
+  release-build:
+    runs-on: macos-latest
+    steps:
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.7.*'
+      - name: checkout code
+        uses: actions/checkout@v4
+      - name: build
+        shell: bash
+        run: |
+          mkdir build && cd build
+          cmake .. --DCMAKE_BUILD_TYPE=Release
+          cmake --build --target skipper
+          cmake --install --prefix=bin
+          ditto -c -k --keepParent bin skipper.zip
+          mv skipper.zip skipper-${{ github.ref_name }}-darwin-arm64.zip
+      - name: release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: skipper-${{ github.ref_name }}-darwin-arm64.zip
