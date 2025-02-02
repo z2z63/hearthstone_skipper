@@ -1,0 +1,5 @@
+BasedOnStyle: LLVM  # 使用LLVM风格
+IndentWidth: 4      # 缩进四空格
+Language: Cpp
+ColumnLimit: 120    # 每行最多120字符
+AllowShortFunctionsOnASingleLine: None  # 短函数不允许在一行
