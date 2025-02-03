@@ -3,16 +3,20 @@ project(hearththone_skipper)
 
 set(CMAKE_CXX_STANDARD 20)
 
-
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Network)
-qt_standard_project_setup()
+
+#qt_standard_project_setup()
+# 防止AUTO_MOC属性污染依赖库，参考 https://doc.qt.io/qt-6/qt-standard-project-setup.html#description , 手动设置 AUTO_MOC
+
 
 file(GLOB_RECURSE SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp ${CMAKE_CURRENT_SOURCE_DIR}/src/*.h)
-message(STATUS SRC=${SRC})
 
 qt_add_executable(skipper ${SRC})
-target_link_libraries(skipper PRIVATE Qt6::Widgets Qt6::Network)
+set_target_properties(skipper PROPERTIES
+        AUTOMOC ON
+)
 
+target_link_libraries(skipper PRIVATE Qt6::Widgets Qt6::Network)
 
 set_target_properties(skipper PROPERTIES
         WIN32_EXECUTABLE ON
@@ -40,7 +44,7 @@ target_link_libraries(skipper PUBLIC yaml-cpp::yaml-cpp) # The library or execut
 target_link_libraries(skipper PRIVATE spdlog::spdlog)
 
 install(TARGETS skipper
-        BUNDLE  DESTINATION .
+        BUNDLE DESTINATION .
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
