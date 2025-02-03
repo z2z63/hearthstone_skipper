@@ -22,9 +22,10 @@ jobs:
         shell: bash
         run: |
           mkdir build && cd build
-          cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=$RUNNER_WORKSPACE
+          cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=$RUNNER_WORKSPACE -DCMAKE_INSTALL_PREFIX=bin
           cmake --build . --target skipper
-          ditto -c -k --keepParent skipper.app skipper.zip
+          cmake --install .
+          ditto -c -k --keepParent bin/skipper.app skipper.zip
           mv skipper.zip skipper-${{ github.ref_name }}-darwin-arm64.zip
       - name: release
         uses: softprops/action-gh-release@v2
