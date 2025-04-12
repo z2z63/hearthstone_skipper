@@ -1,23 +1,30 @@
 #pragma once
 #include <string>
-#include <QNetworkAccessManager>
 
-struct ClashConfig
-{
-    std::string external_controller;
-    std::string secret;
-};
+class QNetworkAccessManager;
+#include <QObject>
+#include "config.h"
 
-class Skipper
-{
+class Skipper : public QObject {
+    Q_OBJECT
+
 public:
-    static std::unique_ptr<Skipper> create();
-    void skip();
-    ~Skipper();
+    Skipper();
+
+    ConfigState tryConfig();
+
+    ~Skipper() override;
+    const ClashConfig &config() const;
+    void setExternalController(const std::string &external_controller);
+    void setSecret(const std::string &secret);
+    void setConfig(const ClashConfig &config);
+    void skip() const;
+    void test();
+signals:
+    void testFinished(bool);
 
 private:
-    explicit Skipper(ClashConfig);
+    static std::unique_ptr<QNetworkAccessManager> _manager;
 
-    ClashConfig config;
-    QNetworkAccessManager* manager;
+    ClashConfig _config;
 };

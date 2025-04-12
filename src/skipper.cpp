@@ -6,6 +6,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
+#include <QSettings>
 
 #include "yaml-cpp/yaml.h"
 
@@ -16,49 +17,32 @@
 using namespace std::string_literals;
 
 
-Skipper::Skipper(ClashConfig config) : config(std::move(config)), manager(new QNetworkAccessManager) {
+std::unique_ptr<QNetworkAccessManager> Skipper::_manager = std::make_unique<QNetworkAccessManager>();
+
+Skipper::Skipper(): _config({"", ""}) {
 }
 
-Skipper::~Skipper() {
-    delete manager;
-}
+Skipper::~Skipper() = default;
 
-
-std::unique_ptr<Skipper> Skipper::create() {
-    QFile clash_config_file(QDir::homePath() + "/.config/clash/config.yaml");
-    if (!clash_config_file.open(QIODevice::ReadOnly)) {
-        logger->warn("Failed to open clash config file: {}", clash_config_file.errorString().toStdString());
-        return nullptr;
-    }
-    QString config_string = clash_config_file.readAll();
-    clash_config_file.close();
-    YAML::Node root_node = YAML::Load(config_string.toStdString());
-    auto external_controller = root_node["external-controller"].as<std::string>();
-    auto secret = root_node["secret"].as<std::string>();
-    if (external_controller.empty()) {
-        logger->warn("No external controller specified in config.yaml");
-        return nullptr;
-    }
-    return std::unique_ptr<Skipper>(new Skipper{{external_controller, secret}});
-}
-
-void Skipper::skip() {
+void Skipper::skip() const {
     auto url = QString::fromStdString(
-        "http://"s + config.external_controller);
+        "http://"s + _config.external_controller);
     QNetworkRequest request1(url + "/connections");
     request1.setRawHeader("Authorization",
-                          QByteArray::fromStdString("Bearer "s + config.secret));
-    QNetworkReply *reply1 = manager->get(request1);
+                          QByteArray::fromStdString("Bearer "s + _config.secret));
+    QNetworkReply *reply1 = _manager->get(request1);
     QObject::connect(reply1, &QNetworkReply::finished,
                      [url,reply1,this] {
                          auto json_string = reply1->readAll();
                          if (reply1->error() != QNetworkReply::NoError) {
-                             logger->warn("Failed to get connection, network error: {}", reply1->errorString().toStdString());
+                             logger->warn("Failed to get connection, network error: {}",
+                                          reply1->errorString().toStdString());
                              reply1->deleteLater();
                              return;
                          }
                          if (reply1->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() != 200) {
-                             logger->warn("Failed to get connection, http status code: {}", reply1->errorString().toStdString());
+                             logger->warn("Failed to get connection, http status code: {}",
+                                          reply1->errorString().toStdString());
                              reply1->deleteLater();
                              return;
                          }
@@ -86,8 +70,8 @@ void Skipper::skip() {
 
                          QNetworkRequest request2(url + "/connections/" + QString::fromStdString(connection_to_kill));
                          request2.setRawHeader("Authorization",
-                                               QByteArray::fromStdString("Bearer "s + config.secret));
-                         QNetworkReply *reply2 = manager->deleteResource(request2);
+                                               QByteArray::fromStdString("Bearer "s + _config.secret));
+                         QNetworkReply *reply2 = _manager->deleteResource(request2);
                          QObject::connect(reply2, &QNetworkReply::finished,
                                           [connection_to_kill, reply2] {
                                               if (reply2->error() != QNetworkReply::NoError) {
@@ -108,4 +92,68 @@ void Skipper::skip() {
                                           });
                      }
         );
+}
+
+void Skipper::test() {
+    // get /version
+    auto url = QString::fromStdString(
+        "http://"s + _config.external_controller);
+    QNetworkRequest request(url + "/version");
+    request.setRawHeader("Authorization",
+                         QByteArray::fromStdString("Bearer "s + _config.secret));
+    QNetworkReply *reply = _manager->get(request);
+    connect(reply, &QNetworkReply::finished,
+            [reply, this] {
+                auto json_string = reply->readAll();
+                if (reply->error() != QNetworkReply::NoError) {
+                    logger->warn("Failed to get version, network error: {}",
+                                 reply->errorString().toStdString());
+                    reply->deleteLater();
+                    emit testFinished(false);
+                    return;
+                }
+                if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() != 200) {
+                    logger->warn("Failed to get version, http status code: {}",
+                                 reply->errorString().toStdString());
+                    reply->deleteLater();
+                    emit testFinished(false);
+                    return;
+                }
+                reply->deleteLater();
+                QJsonDocument json_document = QJsonDocument::fromJson(
+                    json_string);
+                if (!json_document.isObject()) {
+                    logger->warn("Failed to get version, malformed json {}", json_string.toStdString());
+                    reply->deleteLater();
+                    emit testFinished(false);
+                    return;
+                }
+                reply->deleteLater();
+                logger->info("clash version {}", json_document["version"].toString().toStdString());
+                emit testFinished(true);
+            }
+        );
+
+}
+
+
+const ClashConfig &Skipper::config() const {
+    return _config;
+}
+
+void Skipper::setExternalController(const std::string &external_controller) {
+    _config.external_controller = external_controller;
+}
+
+void Skipper::setSecret(const std::string &secret) {
+    _config.secret = secret;
+}
+
+ConfigState Skipper::tryConfig() {
+    return _config.tryConfig();
+
+}
+
+void Skipper::setConfig(const ClashConfig &config) {
+    _config = config;
 }
