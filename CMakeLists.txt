@@ -61,3 +61,7 @@ execute_process(
 )
 
 target_compile_definitions(skipper PRIVATE APP_VERSION="${APP_VERSION}")
+
+if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+    target_compile_definitions(skipper PRIVATE SKIPPER_DEBUG)
+endif ()

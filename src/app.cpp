@@ -1,22 +1,24 @@
 #include "app.h"
 
+#include "logger.h"
 #include "setting.h"
 
 
 #include <QApplication>
-#include <QMessageBox>
 #include <QTimer>
 #include <QDesktopServices>
 #include <QDir>
 #include <QDialog>
 #include <QUrl>
 
-std::shared_ptr<Skipper> App::skipper = std::make_shared<Skipper>();
+std::shared_ptr<Skipper> App::skipper;
 
 ConfigState App::configState;
 
 App::App(QObject *parent)
     : QObject(parent) {
+    initLogger();
+    skipper = std::make_shared<Skipper>();
     configState =  skipper->tryConfig();
     createActions();
     createTrayIcon();
@@ -69,7 +71,7 @@ void App::onFunction1() {
 }
 
 void App::onFunction2() {
-    QDesktopServices::openUrl(QUrl("file:///" + QDir::homePath() + "/.hearthstone_skipper/log.txt"));
+    QDesktopServices::openUrl(QUrl::fromLocalFile(getLogFilePath()));
 }
 
 void App::onFunction3() {

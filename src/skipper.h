@@ -27,4 +27,6 @@ private:
     static std::unique_ptr<QNetworkAccessManager> _manager;
 
     ClashConfig _config;
+
+    std::shared_ptr<spdlog::logger> _logger;
 };

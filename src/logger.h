@@ -1,8 +1,8 @@
 #pragma once
 
-#include <memory>
 #include "spdlog/spdlog.h"
+#include <QString>
 
 
-
-extern std::shared_ptr<spdlog::logger> logger;
+QString getLogFilePath();
+void initLogger();

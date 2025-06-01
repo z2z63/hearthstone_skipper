@@ -1,9 +1,13 @@
 #include "config.h"
 #include <QSettings>
-#include <QFile>
 #include <QDir>
 #include "logger.h"
 #include "yaml-cpp/yaml.h"
+
+ClashConfig::ClashConfig(const std::string &external_controller, const std::string &secret):
+    external_controller(external_controller), secret(secret), _logger(spdlog::get("skipper")) {
+}
+
 
 ConfigState ClashConfig::tryConfig() {
     const QSettings settings;
@@ -22,7 +26,7 @@ ConfigState ClashConfig::tryConfig() {
 ConfigState ClashConfig::deduceFromConfigFile() {
     QFile clash_config_file(QDir::homePath() + "/.config/clash/config.yaml");
     if (!clash_config_file.open(QIODevice::ReadOnly)) {
-        logger->warn("Failed to open clash config file: {}", clash_config_file.errorString().toStdString());
+        _logger->warn("Failed to open clash config file: {}", clash_config_file.errorString().toStdString());
         return ConfigState::NONE;
     }
     QString config_string = clash_config_file.readAll();
@@ -31,7 +35,7 @@ ConfigState ClashConfig::deduceFromConfigFile() {
     auto _external_controller = root_node["external-controller"].as<std::string>();
     auto _secret = root_node["secret"].as<std::string>();
     if (_external_controller.empty()) {
-        logger->warn("No external controller specified in config.yaml");
+        _logger->warn("No external controller specified in config.yaml");
         return ConfigState::NONE;
     }
     external_controller = _external_controller;
