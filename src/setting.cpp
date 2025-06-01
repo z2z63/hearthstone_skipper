@@ -15,7 +15,7 @@
 #include "config.h"
 
 #ifndef APP_VERSION
-#define APP_VERSION "v0.0.6"
+#define APP_VERSION "v0.0.0"
 #endif
 
 SettingDialog::SettingDialog() {
@@ -30,10 +30,7 @@ SettingDialog::SettingDialog() {
     setWindowFlag(Qt::WindowStaysOnTopHint);
 }
 
-SettingDialog::~SettingDialog() {
-    qDebug() << "SettingDialog::~SettingDialog";
-};
-
+SettingDialog::~SettingDialog() = default;
 
 SettingTab::SettingTab(QWidget *parent): QWidget(parent) {
     if (App::skipper) {

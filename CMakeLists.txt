@@ -54,3 +54,10 @@ qt_generate_deploy_app_script(
         NO_UNSUPPORTED_PLATFORM_ERROR
 )
 install(SCRIPT ${deploy_script})
+
+execute_process(
+        COMMAND git describe --tags
+        OUTPUT_VARIABLE APP_VERSION
+)
+
+target_compile_definitions(skipper PRIVATE APP_VERSION="${APP_VERSION}")
