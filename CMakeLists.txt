@@ -48,10 +48,16 @@ install(TARGETS skipper
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
+set(deploy_tool_options "")
+if (APPLE)
+    set(deploy_tool_options "-dmg")
+endif ()
+
 qt_generate_deploy_app_script(
         TARGET skipper
         OUTPUT_SCRIPT deploy_script
         NO_UNSUPPORTED_PLATFORM_ERROR
+        DEPLOY_TOOL_OPTIONS ${deploy_tool_options}
 )
 install(SCRIPT ${deploy_script})
 
