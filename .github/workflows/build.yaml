@@ -16,6 +16,10 @@ jobs:
         uses: jurplel/install-qt-action@v4
         with:
           version: '6.9.*'
+      - name: install cmake
+        uses: lukka/get-cmake@latest
+        with:
+          cmakeVersion: '~3.31.5'
       - name: checkout code
         uses: actions/checkout@v4
       - name: build
