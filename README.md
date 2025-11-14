@@ -13,8 +13,8 @@
 <div style="display: flex;justify-content: space-around">
   <img src="docs/img.png" alt="img">
   <img src="docs/img_1.png" alt="img1" style="width: 100%">
-  <img src="docs/img_2.png" alt="img2" style="width: 700px">
-  <img src="docs/img_3.png" alt="img3" style="width: 180px">
+  <img src="docs/img_2.png" alt="img2" style="width: 630px">
+  <img src="docs/img_3.png" alt="img3" style="width: 150px">
 </div>
 
 ## 原理
