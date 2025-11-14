@@ -60,14 +60,21 @@ qt_generate_deploy_app_script(
         DEPLOY_TOOL_OPTIONS ${deploy_tool_options}
 )
 install(SCRIPT ${deploy_script})
-
-execute_process(
-        COMMAND git describe --tags
-        OUTPUT_VARIABLE APP_VERSION
-)
-
+if (NOT APP_VERSION)    # shallow clone 的情况下无法获取到 tag
+    execute_process(
+            COMMAND git describe --tags
+            OUTPUT_VARIABLE APP_VERSION
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+endif ()
+if (NOT APP_VERSION)
+    set(APP_VERSION "unknown")
+endif ()
 target_compile_definitions(skipper PRIVATE APP_VERSION="${APP_VERSION}")
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
     target_compile_definitions(skipper PRIVATE SKIPPER_DEBUG)
 endif ()
+
+message(STATUS APP_VERSION=${APP_VERSION})
+message(STATUS QT_VERSION=${Qt6_VERSION})

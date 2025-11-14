@@ -26,7 +26,7 @@ jobs:
         shell: bash
         run: |
           mkdir build && cd build
-          cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=$RUNNER_WORKSPACE -DCMAKE_INSTALL_PREFIX=bin
+          cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=$RUNNER_WORKSPACE -DCMAKE_INSTALL_PREFIX=bin -DAPP_VERSION=${{ github.ref_name }}
           cmake --build . --target skipper
           cmake --install .
           mv skipper.dmg skipper-${{ github.ref_name }}-darwin-arm64.dmg
