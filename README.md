@@ -6,14 +6,14 @@
 
 ## 如何使用
 
-- 在 release 中下载 app 并打开
-- skipper 需要获取 clash 核心的`external_controller`和`secret`，并且需要 clash 核心接管炉石传说客户端的流量
+- 在 release 中下载 app，解压移动到 Application 并打开
+- skipper 需要获取 clash 核心的`external_controller`和`secret`，并且需要 clash 核心接管炉石传说客户端的流量  
   skipper 会尝试自动推断`external_controller`和`secret`，如果无法推断，请手动填写
+
   <div style="display: flex;justify-content: space-around">
-    <img src="docs/img_1.png" alt="img1">
-    <img src="docs/img_2.png" alt="img2">
-    <div style="width: 100%"></div>
-    <img src="docs/img_3.png" alt="img3">
+    <img src="docs/img_1.png" alt="img1" style="width: 100%">
+    <img src="docs/img_2.png" alt="img2" style="width: 80%">
+    <img src="docs/img_3.png" alt="img3" style="width: 20%">
   </div>
 
 ## 原理
@@ -44,7 +44,6 @@ root 权限，不修改网络配置，系统影响小
 
 ## 要求
 
-1. 您需要使用 clash premium（不管您使用clash for windows 还是 clash verge 等 clash GUI，只需要clash 核心是clash premium即可）
-2. 炉石传说是国服（国际服没有验证）
-3. MacOS（我没有使用任何平台特定功能，略加修改即可运行在 windows）
+1. 您使用的 clash 核心需要能够接管炉石传说客户端的流量
+2. MacOS（我没有使用任何平台特定功能，略加修改即可运行在 windows）
 
