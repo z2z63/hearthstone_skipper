@@ -46,7 +46,7 @@ void App::createActions() {
     connect(function3Action, &QAction::triggered, this, &App::onFunction3);
 
     quitAction = new QAction(tr("退出"), this);
-    connect(quitAction, &QAction::triggered, qApp, &QApplication::quit);
+    connect(quitAction, &QAction::triggered, this, &QApplication::quit);
 }
 
 void App::createTrayIcon() {

@@ -14,9 +14,8 @@
 using namespace std::string_literals;
 
 
-std::unique_ptr<QNetworkAccessManager> Skipper::_manager = std::make_unique<QNetworkAccessManager>();
-
-Skipper::Skipper(): _config("", ""), _logger(spdlog::get("skipper")) {
+Skipper::Skipper() : _config("", ""), _logger(spdlog::get("skipper")),
+                     _manager(std::make_unique<QNetworkAccessManager>()) {
 }
 
 Skipper::~Skipper() = default;
@@ -38,9 +37,9 @@ void Skipper::skip() const {
                              _logger->flush();
                              return;
                          }
-                         if (reply1->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() != 200) {
-                             SPDLOG_LOGGER_WARN(_logger, "Failed to get connection, http status code: {}",
-                                                reply1->errorString().toStdString());
+                         if (int code = reply1->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+                             code != 200) {
+                             SPDLOG_LOGGER_WARN(_logger, "Failed to get connection, http status code: {}", code);
                              reply1->deleteLater();
                              _logger->flush();
                              return;
@@ -50,7 +49,8 @@ void Skipper::skip() const {
                              json_string);
                          //  /Applications/Hearthstone/Hearthstone.app
                          if (!json_document["connections"].isArray()) {
-                             SPDLOG_LOGGER_WARN(_logger, "Failed to get connection, malformed json {}", json_string.toStdString());
+                             SPDLOG_LOGGER_WARN(_logger, "Failed to get connection, malformed json {}",
+                                                json_string.toStdString());
                              _logger->flush();
                              return;
                          }
@@ -76,16 +76,19 @@ void Skipper::skip() const {
                          QObject::connect(reply2, &QNetworkReply::finished,
                                           [this, connection_to_kill, reply2] {
                                               if (reply2->error() != QNetworkReply::NoError) {
-                                                  SPDLOG_LOGGER_WARN(_logger, "kill connection failed, netowkr error: {}",
-                                                                     reply2->errorString().toStdString());
+                                                  SPDLOG_LOGGER_WARN(
+                                                      _logger, "kill connection failed, netowkr error: {}",
+                                                      reply2->errorString().toStdString());
                                                   reply2->deleteLater();
                                                   _logger->flush();
                                                   return;
                                               }
-                                              if (reply2->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() !=
-                                                  200) {
-                                                  SPDLOG_LOGGER_WARN(_logger, "kill connection failed, http status code: {}",
-                                                                     reply2->errorString().toStdString());
+
+                                              if (int code = reply2->
+                                                             attribute(QNetworkRequest::HttpStatusCodeAttribute).
+                                                             toInt(); code != 200) {
+                                                  SPDLOG_LOGGER_WARN(
+                                                      _logger, "kill connection failed, http status code: {}", code);
                                                   reply2->deleteLater();
                                                   _logger->flush();
                                                   return;

@@ -20,7 +20,7 @@ class SettingTab : public QWidget {
     Q_OBJECT
 
 public:
-    SettingTab(QWidget* parent = nullptr);
+    SettingTab(QWidget *parent = nullptr);
 
     ~SettingTab() override;
 
@@ -30,6 +30,7 @@ private slots:
 private:
     QBoxLayout *layout1;
     ClashConfig _config;
+    QTimer *timer;
 
 };
 
@@ -37,7 +38,7 @@ class AboutTab : public QWidget {
     Q_OBJECT
 
 public:
-    AboutTab(QWidget* parent = nullptr);
+    AboutTab(QWidget *parent = nullptr);
     ~AboutTab() override;
 
 private:

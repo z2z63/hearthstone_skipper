@@ -15,7 +15,7 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:
-          version: '6.7.*'
+          version: '6.9.*'
       - name: checkout code
         uses: actions/checkout@v4
       - name: build

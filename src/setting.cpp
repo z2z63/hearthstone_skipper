@@ -3,15 +3,14 @@
 #include "app.h"
 
 #include <QFormLayout>
-#include <QtWidgets/qdialog.h>
 #include <QtWidgets/qlabel.h>
 #include <QTabWidget>
-#include <QLabel>
 #include <QLineEdit>
 #include <QFileDialog>
 #include <QPushButton>
 #include <QMessageBox>
 #include <QSettings>
+#include <QTimer>
 #include "config.h"
 
 #ifndef APP_VERSION
@@ -32,7 +31,7 @@ SettingDialog::SettingDialog() {
 
 SettingDialog::~SettingDialog() = default;
 
-SettingTab::SettingTab(QWidget *parent): QWidget(parent) {
+SettingTab::SettingTab(QWidget *parent): QWidget(parent),timer(new QTimer(parent)) {
     if (App::skipper) {
         _config = App::skipper->config();
     }
@@ -40,10 +39,10 @@ SettingTab::SettingTab(QWidget *parent): QWidget(parent) {
 
     auto layout2 = new QFormLayout();
     auto lineEdit1 = new QLineEdit(QString::fromStdString(_config.external_controller));
-    lineEdit1->setMinimumSize(180, -1);
+    lineEdit1->setMinimumWidth(180);
     layout2->addRow("external controller", lineEdit1);
     auto lineEdit2 = new QLineEdit(QString::fromStdString(_config.secret));
-    lineEdit2->setMinimumSize(180, -1);
+    lineEdit2->setMinimumWidth(180);
 
     layout2->addRow("secret", lineEdit2);
     connect(lineEdit1, &QLineEdit::textEdited, this, [this](const QString &text) {
@@ -61,6 +60,10 @@ SettingTab::SettingTab(QWidget *parent): QWidget(parent) {
         App::skipper->setConfig(_config);
         App::configState = ConfigState::GET_FROM_SETTINGS;
         configStateHint->setText("已保存到设置");
+        timer->start(1000);
+        timer->callOnTimeout([configStateHint] {
+            configStateHint->clear();
+        });
     };
     connect(lineEdit1, &QLineEdit::editingFinished, this, onFormComplete);
     connect(lineEdit2, &QLineEdit::editingFinished, this, onFormComplete);
@@ -87,6 +90,10 @@ SettingTab::SettingTab(QWidget *parent): QWidget(parent) {
     layout1->addWidget(configStateHint,0, Qt::AlignHCenter);
     if (App::configState == ConfigState::DEDUCED_FROM_FILE) {
         configStateHint->setText("已根据 ~/.config/clash/config.yaml 自动推断");
+        timer->start(1000);
+        timer->callOnTimeout([configStateHint] {
+            configStateHint->clear();
+        });
     }
     layout1->addWidget(btn1,0, Qt::AlignHCenter);
     setLayout(layout1);
@@ -109,6 +116,7 @@ AboutTab::AboutTab(QWidget *parent): QWidget(parent) {
     layout1 = new QVBoxLayout();
     layout1->addWidget(new QLabel(
         QString("<strong>Skipper") + APP_VERSION +
+        "<br/>build with Qt" + QT_VERSION_STR
         "</strong><br/><a href='https://github.com/z2z63/hearthstone_skipper'>https://github.com/z2z63/hearthstone_skipper<a/>"));
     setLayout(layout1);
 }

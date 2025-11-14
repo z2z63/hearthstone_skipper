@@ -24,7 +24,7 @@ signals:
     void testFinished(bool);
 
 private:
-    static std::unique_ptr<QNetworkAccessManager> _manager;
+    std::unique_ptr<QNetworkAccessManager> _manager;
 
     ClashConfig _config;
 
