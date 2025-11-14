@@ -10,12 +10,12 @@
 - skipper 需要获取 clash 核心的`external_controller`和`secret`，并且需要 clash 核心接管炉石传说客户端的流量  
   skipper 会尝试自动推断`external_controller`和`secret`，如果无法推断，请手动填写
 
-  <div style="display: flex;justify-content: space-around">
-    <img src="docs/img.png" alt="img">
-    <img src="docs/img_1.png" alt="img1" style="width: 100%">
-    <img src="docs/img_2.png" alt="img2" style="width: 80%">
-    <img src="docs/img_3.png" alt="img3" style="width: 20%">
-  </div>
+<div style="display: flex;justify-content: space-around">
+  <img src="docs/img.png" alt="img">
+  <img src="docs/img_1.png" alt="img1" style="width: 100%">
+  <img src="docs/img_2.png" alt="img2" style="width: 715px">
+  <img src="docs/img_3.png" alt="img3" style="width: 18px">
+</div>
 
 ## 原理
 
