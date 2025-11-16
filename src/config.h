@@ -1,13 +1,17 @@
 #pragma once
 
+#include <QNetworkAccessManager>
 #include <string>
 #include <spdlog/spdlog.h>
 
 enum class ConfigState {
-    DEDUCED_FROM_FILE,
+    CLASH_FOR_WINDOWS_DEDUCED,
+    CLASH_VERGE_DEDUCED,
     GET_FROM_SETTINGS,
     NONE,
 };
+
+extern std::unique_ptr<QNetworkAccessManager> manager;
 
 class ClashConfig {
 public:
@@ -16,6 +20,10 @@ public:
 
 private:
     ConfigState deduceFromConfigFile();
+
+    ConfigState deduceForClashVerge();
+
+    ConfigState deduceForCFW();
 
 public:
     std::string external_controller;

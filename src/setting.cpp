@@ -60,7 +60,7 @@ SettingTab::SettingTab(QWidget *parent): QWidget(parent),timer(new QTimer(parent
         App::skipper->setConfig(_config);
         App::configState = ConfigState::GET_FROM_SETTINGS;
         configStateHint->setText("已保存到设置");
-        timer->start(1000);
+        timer->start(3000);
         timer->callOnTimeout([configStateHint] {
             configStateHint->clear();
         });
@@ -88,9 +88,9 @@ SettingTab::SettingTab(QWidget *parent): QWidget(parent),timer(new QTimer(parent
     });
     layout1->addLayout(layout2);
     layout1->addWidget(configStateHint,0, Qt::AlignHCenter);
-    if (App::configState == ConfigState::DEDUCED_FROM_FILE) {
+    if (App::configState == ConfigState::CLASH_FOR_WINDOWS_DEDUCED) {
         configStateHint->setText("已根据 ~/.config/clash/config.yaml 自动推断");
-        timer->start(1000);
+        timer->start(3000);
         timer->callOnTimeout([configStateHint] {
             configStateHint->clear();
         });

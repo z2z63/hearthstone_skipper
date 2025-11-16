@@ -18,6 +18,7 @@ ConfigState App::configState;
 App::App(QObject *parent)
     : QObject(parent) {
     initLogger();
+    manager = std::make_unique<QNetworkAccessManager>(this);
     skipper = std::make_shared<Skipper>();
     configState =  skipper->tryConfig();
     createActions();

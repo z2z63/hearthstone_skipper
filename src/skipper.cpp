@@ -14,8 +14,7 @@
 using namespace std::string_literals;
 
 
-Skipper::Skipper() : _config("", ""), _logger(spdlog::get("skipper")),
-                     _manager(std::make_unique<QNetworkAccessManager>()) {
+Skipper::Skipper() : _config("", ""), _logger(spdlog::get("skipper")) {
 }
 
 Skipper::~Skipper() = default;
@@ -26,7 +25,7 @@ void Skipper::skip() const {
     QNetworkRequest request1(url + "/connections");
     request1.setRawHeader("Authorization",
                           QByteArray::fromStdString("Bearer "s + _config.secret));
-    QNetworkReply *reply1 = _manager->get(request1);
+    QNetworkReply *reply1 = manager->get(request1);
     QObject::connect(reply1, &QNetworkReply::finished,
                      [url,reply1,this] {
                          auto json_string = reply1->readAll();
@@ -72,7 +71,7 @@ void Skipper::skip() const {
                          QNetworkRequest request2(url + "/connections/" + QString::fromStdString(connection_to_kill));
                          request2.setRawHeader("Authorization",
                                                QByteArray::fromStdString("Bearer "s + _config.secret));
-                         QNetworkReply *reply2 = _manager->deleteResource(request2);
+                         QNetworkReply *reply2 = manager->deleteResource(request2);
                          QObject::connect(reply2, &QNetworkReply::finished,
                                           [this, connection_to_kill, reply2] {
                                               if (reply2->error() != QNetworkReply::NoError) {
@@ -108,7 +107,7 @@ void Skipper::test() {
     QNetworkRequest request(url + "/version");
     request.setRawHeader("Authorization",
                          QByteArray::fromStdString("Bearer "s + _config.secret));
-    QNetworkReply *reply = _manager->get(request);
+    QNetworkReply *reply = manager->get(request);
     connect(reply, &QNetworkReply::finished,
             [reply, this] {
                 auto json_string = reply->readAll();
