@@ -15,7 +15,7 @@
   <img src="docs/img_1.png" alt="img1" style="width: 100%">
   <img src="docs/img_2.png" alt="img2" style="width: 630px">
   <img src="docs/img_3.png" alt="img3" style="width: 150px">
-  <img src="docs/img_4.png" alt="img4" style="width: 150px">
+  <img src="docs/img_4.png" alt="img4" style="width: 800px">
 </div>
 
 ## 原理
