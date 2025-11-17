@@ -12,13 +12,30 @@ include(ExternalProject)
 
 
 file(GLOB_RECURSE SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
+file(GLOB_RECURSE HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/include/*.h)
 
-qt_add_executable(skipper ${SRC})
+
+qt_add_executable(skipper ${SRC} ${HEADERS})
+qt_add_executable(qcurl_test
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/qcurl_test.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/qcurl.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/qcurl.h
+)
+target_include_directories(qcurl_test PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_include_directories(skipper PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
 set_target_properties(skipper PROPERTIES
         AUTOMOC ON
 )
 
+set_target_properties(qcurl_test PROPERTIES
+        AUTOMOC ON
+)
+
+#set(CMAKE_CXX_FLAGS_DEBUG "-fsanitize=undefined,address -fno-omit-frame-pointer")
+
 target_link_libraries(skipper PRIVATE Qt6::Widgets Qt6::Network)
+target_link_libraries(qcurl_test PRIVATE Qt6::Widgets)
 
 set_target_properties(skipper PROPERTIES
         WIN32_EXECUTABLE ON
@@ -51,6 +68,7 @@ ExternalProject_Add(
         CMAKE_ARGS -DBUILD_CURL_EXE=OFF -DBUILD_EXAMPLES=OFF -DBUILD_LIBCURL_DOCS=OFF -DBUILD_MISC_DOCS=OFF
         -DBUILD_TESTING=OFF -DCURL_USE_LIBPSL=OFF
         -DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/libcurl-${CMAKE_BUILD_TYPE}/usr
+        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DENABLE_DEBUG=ON -DCMAKE_C_FLAGS=-fsanitize=undefined,address\ -g
 )
 
 # 添加 yaml-cpp 依赖
@@ -69,6 +87,15 @@ target_link_directories(skipper PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/libcurl-${CM
 target_link_libraries(skipper PRIVATE curl)
 
 add_dependencies(skipper libyaml-cpp libspdlog libcurl)
+
+
+# 添加 libcurl 依赖
+#target_include_directories(qcurl_test PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/libcurl-${CMAKE_BUILD_TYPE}/usr/include)
+#target_link_directories(qcurl_test PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/libcurl-${CMAKE_BUILD_TYPE}/usr/lib)
+find_package(CURL REQUIRED PATHS ${CMAKE_CURRENT_BINARY_DIR}/libcurl-${CMAKE_BUILD_TYPE}/usr)
+target_link_libraries(qcurl_test PRIVATE CURL::libcurl)
+
+add_dependencies(qcurl_test libcurl)
 
 install(TARGETS skipper
         BUNDLE DESTINATION .
