@@ -38,7 +38,7 @@ void Skipper::skip() const {
                              return;
                          }
                          if (int code = reply1->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-                             code != 200) {
+                             code / 100 != 2) {
                              SPDLOG_LOGGER_WARN(_logger, "Failed to get connection, http status code: {}", code);
                              reply1->deleteLater();
                              _logger->flush();
@@ -86,7 +86,7 @@ void Skipper::skip() const {
 
                                               if (int code = reply2->
                                                              attribute(QNetworkRequest::HttpStatusCodeAttribute).
-                                                             toInt(); code != 200) {
+                                                             toInt(); code / 100 != 2) {
                                                   SPDLOG_LOGGER_WARN(
                                                       _logger, "kill connection failed, http status code: {}", code);
                                                   reply2->deleteLater();
@@ -120,7 +120,7 @@ void Skipper::test() {
                     _logger->flush();
                     return;
                 }
-                if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() != 200) {
+                if (int code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt(); code / 100 != 2) {
                     SPDLOG_LOGGER_WARN(_logger, "Failed to get version, http status code: {}",
                                        reply->errorString().toStdString());
                     reply->deleteLater();
