@@ -32,8 +32,13 @@ ConfigState ClashConfig::deduceFromConfigFile() {
     QString config_string = clash_config_file.readAll();
     clash_config_file.close();
     YAML::Node root_node = YAML::Load(config_string.toStdString());
-    auto _external_controller = root_node["external-controller"].as<std::string>();
-    auto _secret = root_node["secret"].as<std::string>();
+    std::string _external_controller{}, _secret{};
+    if (root_node["external-controller"]) {
+        _external_controller = root_node["external-controller"].as<std::string>();
+    }
+    if (root_node["secret"]) {
+        _secret = root_node["secret"].as<std::string>();
+    }
     if (_external_controller.empty()) {
         _logger->warn("No external controller specified in config.yaml");
         return ConfigState::NONE;
