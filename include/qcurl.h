@@ -6,28 +6,31 @@
 
 class SocketNotifiers {
 public:
-    QSocketNotifier* read_notifier = nullptr;
-    QSocketNotifier* write_notifier = nullptr;
+    QSocketNotifier *read_notifier = nullptr;
+    QSocketNotifier *write_notifier = nullptr;
 };
 
 class QCurlEasy : public QObject {
     Q_OBJECT
     friend class QCurl;
-public:
 
-    explicit QCurlEasy(CURL *curl, QObject* parent = nullptr);
+public:
+    explicit QCurlEasy(CURL *curl, QObject *parent = nullptr);
     ~QCurlEasy() override;
+    void perform() const;
 signals:
-    void done(long code, QByteArray body);
+    void done(QString error, long code, QByteArray body);
 
 private:
-    void emit_done();
+    void emit_done(CURLcode);
 
 public:
-    CURL *_curl;
+    CURL *curl;
+    curl_slist* headers = nullptr;
 
 private:
     QByteArray data = QByteArray();
+    char error_buffer[CURL_ERROR_SIZE]{};
 
 };
 

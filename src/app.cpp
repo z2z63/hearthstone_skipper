@@ -1,11 +1,10 @@
 #include "app.h"
 
 #include "logger.h"
-#include "setting.h"
-
+#include "setting_dialog.h"
+#include "skipper.h"
 
 #include <QApplication>
-#include <QTimer>
 #include <QDesktopServices>
 #include <QDir>
 #include <QDialog>
@@ -13,27 +12,29 @@
 
 std::shared_ptr<Skipper> App::skipper;
 
-ConfigState App::configState;
+QCurlEasy *App::curlEasy;
 
 App::App(QObject *parent)
-    : QObject(parent) {
+    : QObject(parent), trayIcon(nullptr) {
     initLogger();
-    manager = std::make_unique<QNetworkAccessManager>(this);
-    skipper = std::make_shared<Skipper>();
-    configState =  skipper->tryConfig();
+    const AppSettings &settings = AppSettings::instance();
+    skipper = std::make_shared<Skipper>(ClashConfig{.config_deduce_source = ExternalControllerType::TCPIP,
+                                                    .external_controller = settings.external_controller().toStdString(),
+                                                    .secret = settings.secret().toStdString(),
+                                                    .unix_socket = settings.unix_socket().toStdString()});
+    settingDialog = new SettingDialog();
+
     createActions();
     createTrayIcon();
+    assert(trayIcon != nullptr);
     trayIcon->show();
-    settingDialog = nullptr;
     onFunction3();
 }
 
 App::~App() {
     delete trayIcon;
     delete trayIconMenu;
-    if (settingDialog) {
-        delete settingDialog;
-    }
+    delete settingDialog;
 }
 
 void App::createActions() {
@@ -76,8 +77,5 @@ void App::onFunction2() {
 }
 
 void App::onFunction3() {
-    if (settingDialog == nullptr) {
-        settingDialog = new SettingDialog();
-    }
     settingDialog->show();
 }

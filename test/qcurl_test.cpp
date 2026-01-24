@@ -9,21 +9,29 @@ int main(int argc, char *argv[]) {
     qDebug() << "=== QCurl Test Started ===";
     qDebug() << "Making request to google.com...";
 
+
+
     CURL *curl = curl_easy_init();
+    // 创建 QCurlEasy 对象，这会自动添加到 multi handle
+    QCurlEasy qcurl_easy =  QCurlEasy(curl);
+    qcurl_easy.perform();
 
     // 设置 URL
     curl_easy_setopt(curl, CURLOPT_URL, "https://google.com");
 
-    // 创建 QCurlEasy 对象，这会自动添加到 multi handle
-    QCurlEasy qcurl_easy =  QCurlEasy(curl);
+
 
 
     // 连接完成信号，打印响应数据
-    QObject::connect(&qcurl_easy, &QCurlEasy::done, [&app](long code, QByteArray body) {
+    QObject::connect(&qcurl_easy, &QCurlEasy::done, [&app](const QString& error,long code, const QByteArray& body) {
         qDebug() << "=== Request Completed ===";
+        if (!error.isEmpty()) {
+            qDebug() << "Error:" << error;
+            app.quit();
+        }
         qDebug() << "HTTP Response Code:" << code;
 
-        // 打印响应体的前 500 个字符
+        // 打印响应体
         QString bodyStr = QString::fromUtf8(body);
         qDebug().noquote() << bodyStr;
 

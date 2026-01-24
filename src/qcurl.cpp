@@ -11,27 +11,39 @@ QCurl &QCurl::instance() {
     return inst;
 }
 
-QCurlEasy::QCurlEasy(CURL *curl, QObject *parent) : QObject(parent), _curl(curl) {
+QCurlEasy::QCurlEasy(CURL *curl, QObject *parent) : QObject(parent), curl(curl) {
     curl_easy_setopt(curl, CURLOPT_PRIVATE, this);
-    curl_easy_setopt(_curl, CURLOPT_WRITEFUNCTION,
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION,
                      +[](const char *ptr, size_t size, size_t nmemb, QCurlEasy* qcurl_easy) -> size_t {
                          qcurl_easy->data.append(ptr, (int)(size * nmemb));
                          return size * nmemb;
                      });
-    curl_easy_setopt(_curl, CURLOPT_WRITEDATA, this);
-    curl_multi_add_handle(QCurl::instance()._curlm, _curl);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, this);
+    curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, error_buffer);
+}
+
+void QCurlEasy::perform() const {
+    curl_multi_add_handle(QCurl::instance()._curlm, curl);
 }
 
 QCurlEasy::~QCurlEasy() {
-    curl_easy_cleanup(_curl);
+    curl_multi_remove_handle(QCurl::instance()._curlm, curl);
+    curl_easy_cleanup(curl);
     data.clear();
+    curl_slist_free_all(headers);
 }
 
 
-void QCurlEasy::emit_done() {
-    long code;
-    curl_easy_getinfo(_curl, CURLINFO_RESPONSE_CODE, &code);
-    emit done(code, data);
+void QCurlEasy::emit_done(CURLcode curl_code) {
+    QString error;
+    if (curl_code != CURLE_OK || error_buffer[0] != 0) {
+        error = QString(error_buffer);
+        memset(&error_buffer, 0, sizeof(error_buffer));
+    }
+    long http_code;
+    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+    emit done(error, http_code, data);
+    data.clear();
 }
 
 
@@ -61,10 +73,11 @@ void QCurl::handleSocketAction(CURL *easy, curl_socket_t s, int mask) {
         }
         if (msg->msg == CURLMSG_DONE) {
             QCurlEasy *qeasy = nullptr;
-            // Use easy from callback, safer than CURLINFO_PRIVATE with potential different pointer
+
             curl_easy_getinfo(easy, CURLINFO_PRIVATE, &qeasy);
             if (qeasy) {
-                qeasy->emit_done();
+                curl_multi_remove_handle(_curlm, qeasy->curl);
+                qeasy->emit_done(msg->data.result);
             }
         }
     }

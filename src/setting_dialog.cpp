@@ -1,4 +1,4 @@
-#include "setting.h"
+#include "setting_dialog.h"
 
 #include "app.h"
 
@@ -11,7 +11,6 @@
 #include <QMessageBox>
 #include <QSettings>
 #include <QTimer>
-#include "config.h"
 
 #ifndef APP_VERSION
 #define APP_VERSION "v0.0.0"
@@ -31,7 +30,7 @@ SettingDialog::SettingDialog() {
 
 SettingDialog::~SettingDialog() = default;
 
-SettingTab::SettingTab(QWidget *parent): QWidget(parent),timer(new QTimer(parent)) {
+SettingTab::SettingTab(QWidget *parent) : QWidget(parent), timer(new QTimer(parent)) {
     if (App::skipper) {
         _config = App::skipper->config();
     }
@@ -54,11 +53,10 @@ SettingTab::SettingTab(QWidget *parent): QWidget(parent),timer(new QTimer(parent
     auto configStateHint = new QLabel();
     configStateHint->setMinimumHeight(0);
     auto onFormComplete = [this, configStateHint] {
-        QSettings settings;
-        settings.setValue("external_controller", QString::fromStdString(_config.external_controller));
-        settings.setValue("secret", QString::fromStdString(_config.secret));
+        AppSettings settings;
+        settings.external_controller_set(QString::fromStdString(_config.external_controller));
+        settings.secret_set(QString::fromStdString(_config.secret));
         App::skipper->setConfig(_config);
-        App::configState = ConfigState::GET_FROM_SETTINGS;
         configStateHint->setText("已保存到设置");
         timer->start(3000);
         timer->callOnTimeout([configStateHint] {
@@ -87,21 +85,12 @@ SettingTab::SettingTab(QWidget *parent): QWidget(parent),timer(new QTimer(parent
         }
     });
     layout1->addLayout(layout2);
-    layout1->addWidget(configStateHint,0, Qt::AlignHCenter);
-    if (App::configState == ConfigState::CLASH_FOR_WINDOWS_DEDUCED) {
-        configStateHint->setText("已根据 ~/.config/clash/config.yaml 自动推断");
-        timer->start(3000);
-        timer->callOnTimeout([configStateHint] {
-            configStateHint->clear();
-        });
-    }
-    layout1->addWidget(btn1,0, Qt::AlignHCenter);
+    layout1->addWidget(configStateHint, 0, Qt::AlignHCenter);
+    layout1->addWidget(btn1, 0, Qt::AlignHCenter);
     setLayout(layout1);
 }
 
-SettingTab::~SettingTab() {
-    qDebug() << "SettingTab::~SettingTab";
-}
+SettingTab::~SettingTab() = default;
 
 void SettingTab::onClashConfigChange(const QString &external_controller, const QString &secret) {
     if (!external_controller.isEmpty()) {
@@ -112,7 +101,7 @@ void SettingTab::onClashConfigChange(const QString &external_controller, const Q
     }
 }
 
-AboutTab::AboutTab(QWidget *parent): QWidget(parent) {
+AboutTab::AboutTab(QWidget *parent) : QWidget(parent) {
     layout1 = new QVBoxLayout();
     layout1->addWidget(new QLabel(
         QString("<strong>Skipper") + APP_VERSION +

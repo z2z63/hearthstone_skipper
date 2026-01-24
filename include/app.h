@@ -5,7 +5,7 @@
 #include <QSystemTrayIcon>
 #include <QMenu>
 #include "skipper.h"
-#include "config.h"
+#include "qcurl.h"
 
 class SettingDialog;
 
@@ -32,16 +32,16 @@ private:
 
 public:
     static std::shared_ptr<Skipper> skipper;
-    static ConfigState configState;
+    static QCurlEasy* curlEasy;
 private:
 
     QSystemTrayIcon* trayIcon;
-    QMenu* trayIconMenu;
+    QMenu* trayIconMenu{};
 
-    QAction* function1Action;
-    QAction* function2Action;
-    QAction* function3Action;
-    QAction* quitAction;
+    QAction* function1Action{};
+    QAction* function2Action{};
+    QAction* function3Action{};
+    QAction* quitAction{};
     SettingDialog* settingDialog;
 };
 

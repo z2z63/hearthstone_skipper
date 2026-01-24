@@ -1,6 +1,7 @@
 #pragma once
 
 #include "skipper.h"
+#include "app_settings.h"
 
 #include <QtGui/QWindow>
 #include <QDialog>
@@ -8,7 +9,7 @@
 #include <QBoxLayout>
 
 
-class SettingDialog : public QDialog {
+class SettingDialog final : public QDialog {
     Q_OBJECT
 
 public:
@@ -16,11 +17,11 @@ public:
     ~SettingDialog() override;
 };
 
-class SettingTab : public QWidget {
+class SettingTab final : public QWidget {
     Q_OBJECT
 
 public:
-    SettingTab(QWidget *parent = nullptr);
+    explicit SettingTab(QWidget *parent = nullptr);
 
     ~SettingTab() override;
 
@@ -34,11 +35,11 @@ private:
 
 };
 
-class AboutTab : public QWidget {
+class AboutTab final : public QWidget {
     Q_OBJECT
 
 public:
-    AboutTab(QWidget *parent = nullptr);
+    explicit AboutTab(QWidget *parent = nullptr);
     ~AboutTab() override;
 
 private:
