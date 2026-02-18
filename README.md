@@ -9,12 +9,16 @@
 - 在 release 中下载 app，解压移动到 Application 并打开
 - skipper 需要获取 clash 核心的`external_controller`和`secret`，并且需要 clash 核心接管炉石传说客户端的流量  
   skipper 会尝试自动推断`external_controller`和`secret`，如果无法推断，请手动填写
+- 开启 clash 的 tun 模式（或者 clash x pro 的增强模式），保证 clash 核心能够接管到炉石传说客户端的流量
+- 在 clash 配置文件的末尾添加`find-process-mode: always`，保证 clash 核心解析连接发起进程，帮助 skipper 找到炉石传说客户端与对局服务器的连接
 
 <div style="display: flex;justify-content: space-around">
   <img src="docs/img.png" alt="img">
   <img src="docs/img_1.png" alt="img1" style="width: 100%">
-  <img src="docs/img_2.png" alt="img2" style="width: 630px">
-  <img src="docs/img_3.png" alt="img3" style="width: 150px">
+  <img src="docs/img_2.png" alt="img2" style="width: 8000px">
+  <img src="https://github.com/user-attachments/assets/df85a116-0dc7-4db1-a620-87e8d68f8483" style="width: 400px"/>
+  <img src="https://github.com/user-attachments/assets/d226bead-c2df-49f9-91db-d167c86ba0a9" style="width: 400px"/>
+  <img src="docs/img_3.png" alt="img3" style="width: 100px">
   <img src="docs/img_4.png" alt="img4" style="width: 800px">
 </div>
 
