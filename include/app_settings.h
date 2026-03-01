@@ -1,20 +1,18 @@
 #pragma once
 
-#include <optional>
-#include <QString>
+#include "clash_config.h"
+
 #include <QSettings>
+#include <QString>
+#include <optional>
 
 class AppSettings {
 public:
     AppSettings();
-    [[nodiscard]] QString unix_socket() const;
-    [[nodiscard]] QString external_controller() const;
-    [[nodiscard]] QString secret() const;
-    void unix_socket_set(const QString &value);
-    void external_controller_set(const QString &value);
-    void secret_set(const QString &value);
+    [[nodiscard]] std::optional<ClashConfig> clash_config() const;
+    void clash_config_set(const ClashConfig &value);
 
-    static const AppSettings &instance();
+    static AppSettings &instance();
 
 private:
     QSettings _settings;

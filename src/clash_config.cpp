@@ -3,12 +3,21 @@
 constexpr std::string HTTP = "http://";
 
 std::string ClashConfig::version() const {
-    return HTTP + external_controller + "/version";
+    if (external_controller_type == ExternalControllerType::TCPIP) {
+        return HTTP + external_controller + "/version";
+    }
+    return "http://localhost/version";
 }
 
 std::string ClashConfig::connections() const {
-    return HTTP + external_controller + "/connections";
+    if (external_controller_type == ExternalControllerType::TCPIP) {
+        return HTTP + external_controller + "/connections";
+    }
+    return "http://localhost/connections";
 }
 std::string ClashConfig::kill_connection(const std::string& conn) const {
-    return HTTP + external_controller + "/connections/" + conn;
+    if (external_controller_type == ExternalControllerType::TCPIP) {
+        return HTTP + external_controller + "/connections/" + conn;
+    }
+    return "http://localhost/connections/" + conn;
 }

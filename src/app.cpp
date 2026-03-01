@@ -5,30 +5,42 @@
 #include "skipper.h"
 
 #include <QApplication>
+#include <QMainWindow>
+#include <QStatusBar>
 #include <QDesktopServices>
-#include <QDir>
 #include <QDialog>
 #include <QUrl>
 
-std::shared_ptr<Skipper> App::skipper;
+Skipper *App::skipper;
 
-QCurlEasy *App::curlEasy;
 
-App::App(QObject *parent)
-    : QObject(parent), trayIcon(nullptr) {
+App::App(QObject *parent) : QObject(parent), trayIcon(nullptr) {
     initLogger();
-    const AppSettings &settings = AppSettings::instance();
-    skipper = std::make_shared<Skipper>(ClashConfig{.config_deduce_source = ExternalControllerType::TCPIP,
-                                                    .external_controller = settings.external_controller().toStdString(),
-                                                    .secret = settings.secret().toStdString(),
-                                                    .unix_socket = settings.unix_socket().toStdString()});
+    if (std::optional clash_config = AppSettings::instance().clash_config(); !clash_config.has_value()) {
+        qeasy = new ConfigAwareQEasy({});
+        auto *deducer = new ConfigDeducer(qeasy, this);
+        skipper = new Skipper(qeasy, this);
+        deducer->tryDeduce();
+        connect(deducer, &ConfigDeducer::deduceFinished, this, [this](ConfigAwareQEasy *_) {
+            if (qeasy == nullptr) {
+                return;
+            }
+            if (settingDialog) {
+                settingDialog->setting_tab->setHitText("skipper 设置已自动推断");
+            }
+            AppSettings::instance().clash_config_set(qeasy->config());
+        });
+    } else {
+        qeasy = new ConfigAwareQEasy(clash_config.value(), this);
+        skipper = new Skipper(qeasy, this);
+    }
     settingDialog = new SettingDialog();
 
     createActions();
     createTrayIcon();
     assert(trayIcon != nullptr);
     trayIcon->show();
-    onFunction3();
+    settingDialog->show();
 }
 
 App::~App() {
@@ -63,7 +75,6 @@ void App::createTrayIcon() {
 
     trayIcon->setIcon(QIcon::fromTheme("dialog-information"));
     trayIcon->setContextMenu(trayIconMenu);
-
 }
 
 void App::onFunction1() {

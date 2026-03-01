@@ -1,32 +1,30 @@
 #pragma once
-#include <string>
-#include "spdlog/spdlog.h"
 #include "config_deducer.h"
+#include "spdlog/spdlog.h"
 #include <QObject>
+#include <string>
 
 class Skipper : public QObject {
     Q_OBJECT
 
-public:
-    explicit Skipper(ClashConfig config, QObject *parent = nullptr);
+  public:
+    explicit Skipper(ConfigAwareQEasy *qeasy, QObject *parent = nullptr);
 
     ~Skipper() override;
     [[nodiscard]] const ClashConfig &config() const;
-    void setExternalController(const std::string &external_controller);
-    void setSecret(const std::string &secret) const;
     void setConfig(const ClashConfig &config) const;
     void skip();
     void test() const;
+
+  signals:
+    void testFinished(bool success, std::string message);
+
+  private:
     void getConnection();
-    void handleGetConnectionAndDeleteConnection(QString error, long code, QByteArray body);
-    void handleDeleteConnection(const QString& error, long code, const QByteArray& body);
-signals:
-    void testFinished(bool);
+    void handleGetConnectionThenKill(const QString &error, long code, const QByteArray &body);
+    void handleKillConnection(const QString &error, long code, const QByteArray &body);
 
-
-
-
-private:
-    ConfigAwareQEasy* qeasy;
+  private:
+    ConfigAwareQEasy *_qeasy;
     std::shared_ptr<spdlog::logger> _logger;
 };

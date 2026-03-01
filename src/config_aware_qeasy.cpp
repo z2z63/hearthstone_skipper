@@ -11,10 +11,14 @@ ConfigAwareQEasy::ConfigAwareQEasy(ClashConfig config, QObject *parent) : QCurlE
 ConfigAwareQEasy::~ConfigAwareQEasy() = default;
 
 void ConfigAwareQEasy::test() {
-    if (_config.external_controller.empty()) {
+    if (_config.external_controller_type == ExternalControllerType::TCPIP && _config.external_controller.empty()) {
         SPDLOG_LOGGER_INFO(_logger, "external controller is empty");
-        emit testFinished(false);
+        emit testFinished(false, "skipper未完成设置");
         return;
+    }
+    if (_config.external_controller_type == ExternalControllerType::UNIX_DOMAIN && _config.unix_socket.empty()) {
+        SPDLOG_LOGGER_INFO(_logger, "unix domain is empty");
+        emit testFinished(false, "skipper未完成设置");
     }
     curl_easy_setopt(curl, CURLOPT_URL, _config.version().c_str());
     connect(this, &QCurlEasy::done, this, &ConfigAwareQEasy::handle_version_response, Qt::SingleShotConnection);
@@ -22,16 +26,18 @@ void ConfigAwareQEasy::test() {
 }
 
 void ConfigAwareQEasy::handle_version_response(const QString &error, long code, const QByteArray &body) {
+    SPDLOG_LOGGER_INFO(_logger, "/version error={}, code={} response={}", error.toStdString(), code, body.toStdString());
     if (!error.isEmpty() || code / 100 != 2) {
-        emit testFinished(false);
+
+        emit testFinished(false, fmt::format("/version error={}, code={}", error.toStdString(), code));
         return;
     }
     if (QJsonDocument doc = QJsonDocument::fromJson(body);
         !doc.isObject() || !doc["version"].isString() || doc["version"].toString().isEmpty()) {
-        emit testFinished(false);
+        emit testFinished(false, fmt::format("/version body={}", doc["version"].toString().toStdString()));
         return;
     }
-    emit testFinished(true);
+    emit testFinished(true, "");
 }
 
 void ConfigAwareQEasy::changeConfig(const ClashConfig &newConfig) {
@@ -40,10 +46,10 @@ void ConfigAwareQEasy::changeConfig(const ClashConfig &newConfig) {
     curl_slist_free_all(headers);
     headers = nullptr;
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, nullptr);
-    if (_config.config_deduce_source == ExternalControllerType::NONE) {
+    if (_config.external_controller_type == ExternalControllerType::NONE) {
         return;
     }
-    if (_config.config_deduce_source == ExternalControllerType::UNIX_DOMAIN && !_config.unix_socket.empty()) {
+    if (_config.external_controller_type == ExternalControllerType::UNIX_DOMAIN && !_config.unix_socket.empty()) {
         curl_easy_setopt(curl, CURLOPT_UNIX_SOCKET_PATH, _config.unix_socket.c_str());
     }
     if (!_config.secret.empty()) {

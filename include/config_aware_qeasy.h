@@ -16,7 +16,7 @@ public:
 public slots:
     void handle_version_response(const QString& error, long code, const QByteArray& body);
 signals:
-    void testFinished(bool success);
+    void testFinished(bool success, std::string message);
 
 
 private:

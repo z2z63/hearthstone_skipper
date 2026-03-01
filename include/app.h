@@ -31,8 +31,7 @@ private:
     void createTrayIcon();
 
 public:
-    static std::shared_ptr<Skipper> skipper;
-    static QCurlEasy* curlEasy;
+    static Skipper* skipper;
 private:
 
     QSystemTrayIcon* trayIcon;
@@ -43,5 +42,7 @@ private:
     QAction* function3Action{};
     QAction* quitAction{};
     SettingDialog* settingDialog;
+
+    ConfigAwareQEasy* qeasy;
 };
 

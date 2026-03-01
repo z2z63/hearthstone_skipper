@@ -10,7 +10,7 @@ enum class ExternalControllerType {
 
 class ClashConfig {
 public:
-    ExternalControllerType config_deduce_source = ExternalControllerType::NONE;
+    ExternalControllerType external_controller_type = ExternalControllerType::NONE;
     std::string external_controller;
     std::string secret;
     std::string unix_socket;

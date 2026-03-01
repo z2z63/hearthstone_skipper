@@ -47,7 +47,7 @@ ExternalProject_Add(
         libyaml-cpp
         PREFIX ${CMAKE_BUILD_TYPE}
         GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
-        GIT_TAG 0.8.0
+        GIT_TAG yaml-cpp-0.9.0
         GIT_SHALLOW true
         INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/libyaml-cpp-${CMAKE_BUILD_TYPE}/usr
         CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/libyaml-cpp-${CMAKE_BUILD_TYPE}/usr -DBUILD_SHARED_LIBS=ON
@@ -92,8 +92,8 @@ add_dependencies(skipper libyaml-cpp libspdlog libcurl)
 # 添加 libcurl 依赖
 #target_include_directories(qcurl_test PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/libcurl-${CMAKE_BUILD_TYPE}/usr/include)
 #target_link_directories(qcurl_test PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/libcurl-${CMAKE_BUILD_TYPE}/usr/lib)
-find_package(CURL REQUIRED PATHS ${CMAKE_CURRENT_BINARY_DIR}/libcurl-${CMAKE_BUILD_TYPE}/usr)
-target_link_libraries(qcurl_test PRIVATE CURL::libcurl)
+#find_package(CURL REQUIRED PATHS ${CMAKE_CURRENT_BINARY_DIR}/libcurl-${CMAKE_BUILD_TYPE}/usr)
+#target_link_libraries(qcurl_test PRIVATE CURL::libcurl)
 
 add_dependencies(qcurl_test libcurl)
 
