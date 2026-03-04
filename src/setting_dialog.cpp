@@ -18,7 +18,7 @@
 #define APP_VERSION "v0.0.0"
 #endif
 
-SettingDialog::SettingDialog():setting_tab(new SettingTab), about_tab(new AboutTab) {
+SettingDialog::SettingDialog() : setting_tab(new SettingTab), about_tab(new AboutTab) {
     setWindowTitle("设置");
     auto layout = new QVBoxLayout();
     setLayout(layout);
@@ -149,11 +149,12 @@ void SettingTab::onClashConfigChange(const QString &external_controller, const Q
 
 AboutTab::AboutTab(QWidget *parent) : QWidget(parent) {
     layout1 = new QVBoxLayout();
-    layout1->addWidget(new QLabel(
+    auto label = new QLabel(
         QString("<strong>Skipper") + APP_VERSION + "<br/>build with Qt" +
         QT_VERSION_STR
         "</strong><br/><a "
-        "href='https://github.com/z2z63/hearthstone_skipper'>https://github.com/z2z63/hearthstone_skipper<a/>"));
+        "href='https://github.com/z2z63/hearthstone_skipper'>https://github.com/z2z63/hearthstone_skipper<a/>");
+    layout1->addWidget(label);
     setLayout(layout1);
 }
 

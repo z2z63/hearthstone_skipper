@@ -58,7 +58,6 @@ void Skipper::handleGetConnectionThenKill(const QString& error, long code, const
         return;
     }
     auto doc = QJsonDocument::fromJson(body);
-    //  /Applications/Hearthstone/Hearthstone.app
     if (!doc["connections"].isArray()) {
         SPDLOG_LOGGER_WARN(_logger, "Failed to get connection, malformed json {}", body.toStdString());
         _logger->flush();
@@ -66,10 +65,9 @@ void Skipper::handleGetConnectionThenKill(const QString& error, long code, const
     }
     std::string connection_to_kill;
     for (auto obj : doc["connections"].toArray()) {
-        if (obj.isObject() &&
-            obj.toObject()["metadata"].toObject()["processPath"] ==
-                "/Applications/Hearthstone/Hearthstone.app/Contents/MacOS/Hearthstone" &&
-            obj.toObject()["metadata"].toObject()["host"] == "") {
+        if (obj.isObject() && obj.toObject()["metadata"].toObject()["processPath"].toString()
+                                 .endsWith("Hearthstone.app/Contents/MacOS/Hearthstone") &&
+                                 obj.toObject()["metadata"].toObject()["host"] == "") {
             connection_to_kill = obj.toObject()["id"].toString().toStdString();
             SPDLOG_LOGGER_INFO(_logger, "Connection to kill {}", connection_to_kill);
             break;
@@ -102,4 +100,5 @@ void Skipper::handleKillConnection(const QString &error, long code, const QByteA
         _logger->flush();
         return;
     }
+    SPDLOG_LOGGER_INFO(_logger, "DELETE {}", url);
 }
