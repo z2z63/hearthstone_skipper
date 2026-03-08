@@ -4,7 +4,6 @@
 #include <QFile>
 #include <QJsonArray>
 #include <QJsonObject>
-#include <QNetworkReply>
 #include <QSettings>
 
 #include "yaml-cpp/yaml.h"
@@ -50,17 +49,20 @@ void Skipper::handleGetConnectionThenKill(const QString &error, long code, const
     if (!error.isEmpty()) {
         SPDLOG_LOGGER_ERROR(_logger, "GET {} failed: {}", url, error.toStdString());
         _logger->flush();
+        emit skipFinished(false);
         return;
     }
     if (code / 100 != 2) {
         SPDLOG_LOGGER_ERROR(_logger, "GET {} code={} body={}", url, code, body.toStdString());
         _logger->flush();
+        emit skipFinished(false);
         return;
     }
     auto doc = QJsonDocument::fromJson(body);
     if (!doc["connections"].isArray()) {
         SPDLOG_LOGGER_WARN(_logger, "Failed to get connection, malformed json {}", body.toStdString());
         _logger->flush();
+        emit skipFinished(false);
         return;
     }
     std::string connection_to_kill;
@@ -77,6 +79,7 @@ void Skipper::handleGetConnectionThenKill(const QString &error, long code, const
     if (connection_to_kill.empty()) {
         SPDLOG_LOGGER_WARN(_logger, "No connection to kill");
         _logger->flush();
+        emit skipFinished(false);
         return;
     }
     const std::string url2 = _qeasy->config().kill_connection(connection_to_kill);
@@ -95,12 +98,15 @@ void Skipper::handleKillConnection(const QString &error, long code, const QByteA
     if (!error.isEmpty()) {
         SPDLOG_LOGGER_ERROR(_logger, "DELETE {} failed: {}", url, error.toStdString());
         _logger->flush();
+        emit skipFinished(false);
         return;
     }
     if (code / 100 != 2) {
         SPDLOG_LOGGER_ERROR(_logger, "DELETE {} failed code={} body={}", url, code, body.toStdString());
         _logger->flush();
+        emit skipFinished(false);
         return;
     }
     SPDLOG_LOGGER_INFO(_logger, "DELETE {}", url);
+    emit skipFinished(true);
 }

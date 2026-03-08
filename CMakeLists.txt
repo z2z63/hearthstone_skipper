@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.30)
-project(hearththone_skipper)
+project(hearththone_skipper LANGUAGES CXX OBJCXX)
 
 set(CMAKE_CXX_STANDARD 20)
 
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Network)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets)
 
 include(ExternalProject)
 
@@ -21,8 +21,8 @@ qt_add_executable(qcurl_test
     ${CMAKE_CURRENT_SOURCE_DIR}/src/qcurl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/qcurl.h
 )
-target_include_directories(qcurl_test PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
-target_include_directories(skipper PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_include_directories(qcurl_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_include_directories(skipper PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 set_target_properties(skipper PROPERTIES
         AUTOMOC ON
@@ -34,7 +34,7 @@ set_target_properties(qcurl_test PROPERTIES
 
 #set(CMAKE_CXX_FLAGS_DEBUG "-fsanitize=undefined,address -fno-omit-frame-pointer")
 
-target_link_libraries(skipper PRIVATE Qt6::Widgets Qt6::Network)
+target_link_libraries(skipper PRIVATE Qt6::Widgets)
 target_link_libraries(qcurl_test PRIVATE Qt6::Widgets)
 
 set_target_properties(skipper PROPERTIES
@@ -126,3 +126,14 @@ endif ()
 
 message(STATUS APP_VERSION=${APP_VERSION})
 message(STATUS QT_VERSION=${Qt6_VERSION})
+
+if (APPLE)
+    add_library(macos_specific src/platform/window_listener.mm)
+    target_include_directories(macos_specific PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+    target_link_libraries(macos_specific PRIVATE "-framework Foundation -framework Appkit")
+    target_link_libraries(macos_specific PRIVATE Qt6::Widgets)
+    target_include_directories(macos_specific PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/libspdlog-${CMAKE_BUILD_TYPE}/usr/include)
+    target_link_directories(macos_specific PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/libspdlog-${CMAKE_BUILD_TYPE}/usr/lib)
+    target_link_libraries(macos_specific PRIVATE spdlog)
+    target_link_libraries(skipper PRIVATE macos_specific)
+endif ()

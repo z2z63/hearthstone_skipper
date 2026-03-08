@@ -6,6 +6,7 @@
 #include <QMenu>
 #include "skipper.h"
 #include "qcurl.h"
+#include "float_button.h"
 
 class SettingDialog;
 
@@ -42,6 +43,7 @@ private:
     QAction* function3Action{};
     QAction* quitAction{};
     SettingDialog* settingDialog;
+    FloatButton* floatButton;
 
     ConfigAwareQEasy* qeasy;
 };

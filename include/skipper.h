@@ -18,6 +18,7 @@ class Skipper : public QObject {
 
   signals:
     void testFinished(bool success, std::string message);
+    void skipFinished(bool success);
 
   private:
     void getConnection();

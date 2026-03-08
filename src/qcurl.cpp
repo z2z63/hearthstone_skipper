@@ -1,6 +1,5 @@
 #include "qcurl.h"
 #include <QSocketNotifier>
-#include <utility>
 #include <iostream>
 #include <QDebug>
 

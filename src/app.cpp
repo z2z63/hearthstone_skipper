@@ -6,9 +6,7 @@
 
 #include <QApplication>
 #include <QMainWindow>
-#include <QStatusBar>
 #include <QDesktopServices>
-#include <QDialog>
 #include <QUrl>
 
 Skipper *App::skipper;
@@ -38,6 +36,7 @@ App::App(QObject *parent) : QObject(parent), trayIcon(nullptr) {
 
     createActions();
     createTrayIcon();
+    floatButton = new FloatButton();
     assert(trayIcon != nullptr);
     trayIcon->show();
     settingDialog->show();
