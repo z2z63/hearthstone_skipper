@@ -1,10 +1,8 @@
 #include "qcurl.h"
 #include <QSocketNotifier>
-#include <utility>
 #include <iostream>
-#include <QDebug>
 
-int curl_init_code = curl_global_init(CURL_GLOBAL_ALL);
+[[maybe_unused]] int curl_init_code = curl_global_init(CURL_GLOBAL_ALL);
 
 QCurl &QCurl::instance() {
     static QCurl inst;

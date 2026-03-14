@@ -4,7 +4,6 @@
 #include <QFile>
 #include <QJsonArray>
 #include <QJsonObject>
-#include <QNetworkReply>
 #include <QSettings>
 
 #include "yaml-cpp/yaml.h"

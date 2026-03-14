@@ -3,99 +3,86 @@ project(hearththone_skipper)
 
 set(CMAKE_CXX_STANDARD 20)
 
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Network)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets)
 
 include(ExternalProject)
 
-#qt_standard_project_setup()
-# 防止AUTO_MOC属性污染依赖库，参考 https://doc.qt.io/qt-6/qt-standard-project-setup.html#description , 手动设置 AUTO_MOC
+# qt_standard_project_setup()
+# 防止AUTO_MOC属性污染依赖库 手动设置 AUTO_MOC
+set(SRC_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
+qt_add_executable(skipper
 
-file(GLOB_RECURSE SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
-file(GLOB_RECURSE HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/include/*.h)
-
-
-qt_add_executable(skipper ${SRC} ${HEADERS})
-qt_add_executable(qcurl_test
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/qcurl_test.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/qcurl.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/qcurl.h
 )
-target_include_directories(qcurl_test PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
-target_include_directories(skipper PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_sources(skipper PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/app.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/app_settings.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/clash_config.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/config_aware_qeasy.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/config_deducer.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/logger.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/setting_dialog.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/skipper.cpp
+)
 
+target_sources(skipper PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/app.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/app_settings.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/clash_config.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/config_aware_qeasy.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/config_deducer.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/logger.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/setting_dialog.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/skipper.h
+)
+target_include_directories(skipper PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+qt_add_library(qcurl STATIC ${SRC_ROOT}/qcurl.cpp ${CMAKE_CURRENT_SOURCE_DIR}/include/qcurl.h)
+target_include_directories(qcurl PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 set_target_properties(skipper PROPERTIES
         AUTOMOC ON
-)
-
-set_target_properties(qcurl_test PROPERTIES
-        AUTOMOC ON
-)
-
-#set(CMAKE_CXX_FLAGS_DEBUG "-fsanitize=undefined,address -fno-omit-frame-pointer")
-
-target_link_libraries(skipper PRIVATE Qt6::Widgets Qt6::Network)
-target_link_libraries(qcurl_test PRIVATE Qt6::Widgets)
-
-set_target_properties(skipper PROPERTIES
         WIN32_EXECUTABLE ON
         MACOSX_BUNDLE ON
+        MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/info.plist
 )
-set_target_properties(skipper PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/info.plist)
+set_target_properties(qcurl PROPERTIES
+        AUTOMOC ON
+)
 
-ExternalProject_Add(
-        libyaml-cpp
-        PREFIX ${CMAKE_BUILD_TYPE}
+
+include(FetchContent)
+
+FetchContent_Declare(
+        yaml-cpp
         GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
         GIT_TAG yaml-cpp-0.9.0
-        GIT_SHALLOW true
-        INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/libyaml-cpp-${CMAKE_BUILD_TYPE}/usr
-        CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/libyaml-cpp-${CMAKE_BUILD_TYPE}/usr -DBUILD_SHARED_LIBS=ON
 )
-ExternalProject_Add(
-        libspdlog
-        PREFIX ${CMAKE_BUILD_TYPE}
+set(SPDLOG_INSTALL ON)
+set(SPDLOG_BUILD_SHARED ON)
+FetchContent_Declare(
+        spdlog
         GIT_REPOSITORY https://github.com/gabime/spdlog.git
         GIT_TAG v1.15.1
-        GIT_SHALLOW true
-        CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/libspdlog-${CMAKE_BUILD_TYPE}/usr
 )
-
-ExternalProject_Add(
+set(BUILD_CURL_EXE OFF)
+set(BUILD_EXAMPLES OFF)
+set(BUILD_LIBCURL_DOCS OFF)
+set(BUILD_MISC_DOCS OFF)
+set(BUILD_TESTING OFF)
+set(CURL_USE_LIBPSL OFF)
+set(CURL_ENABLE_SSL OFF)
+set(ENABLE_CURL_MANUAL OFF)
+FetchContent_Declare(
         libcurl
-        PREFIX ${CMAKE_BUILD_TYPE}
         URL https://curl.se/download/curl-8.17.0.zip
-        CMAKE_ARGS -DBUILD_CURL_EXE=OFF -DBUILD_EXAMPLES=OFF -DBUILD_LIBCURL_DOCS=OFF -DBUILD_MISC_DOCS=OFF
-        -DBUILD_TESTING=OFF -DCURL_USE_LIBPSL=OFF
-        -DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/libcurl-${CMAKE_BUILD_TYPE}/usr
-        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DENABLE_DEBUG=ON -DCMAKE_C_FLAGS=-fsanitize=undefined,address\ -g
 )
 
-# 添加 yaml-cpp 依赖
-target_include_directories(skipper PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/libyaml-cpp-${CMAKE_BUILD_TYPE}/usr/include)
-target_link_directories(skipper PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/libyaml-cpp-${CMAKE_BUILD_TYPE}/usr/lib)
-target_link_libraries(skipper PRIVATE yaml-cpp)
-
-# 添加 spdlog 依赖
-target_include_directories(skipper PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/libspdlog-${CMAKE_BUILD_TYPE}/usr/include)
-target_link_directories(skipper PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/libspdlog-${CMAKE_BUILD_TYPE}/usr/lib)
-target_link_libraries(skipper PRIVATE spdlog)
-
-# 添加 libcurl 依赖
-target_include_directories(skipper PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/libcurl-${CMAKE_BUILD_TYPE}/usr/include)
-target_link_directories(skipper PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/libcurl-${CMAKE_BUILD_TYPE}/usr/lib)
-target_link_libraries(skipper PRIVATE curl)
-
-add_dependencies(skipper libyaml-cpp libspdlog libcurl)
+FetchContent_MakeAvailable(yaml-cpp spdlog libcurl)
 
 
-# 添加 libcurl 依赖
-#target_include_directories(qcurl_test PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/libcurl-${CMAKE_BUILD_TYPE}/usr/include)
-#target_link_directories(qcurl_test PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/libcurl-${CMAKE_BUILD_TYPE}/usr/lib)
-#find_package(CURL REQUIRED PATHS ${CMAKE_CURRENT_BINARY_DIR}/libcurl-${CMAKE_BUILD_TYPE}/usr)
-#target_link_libraries(qcurl_test PRIVATE CURL::libcurl)
-
-add_dependencies(qcurl_test libcurl)
+target_link_libraries(skipper PRIVATE Qt6::Core Qt6::Gui Qt6::Widgets yaml-cpp spdlog qcurl)
+target_link_libraries(qcurl PRIVATE Qt6::Core PUBLIC CURL::libcurl)
 
 install(TARGETS skipper
         BUNDLE DESTINATION .
@@ -123,6 +110,23 @@ target_compile_definitions(skipper PRIVATE APP_VERSION="${APP_VERSION}")
 if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
     target_compile_definitions(skipper PRIVATE SKIPPER_DEBUG)
 endif ()
+
+
+install(CODE [[
+    file(COPY ${CMAKE_INSTALL_PREFIX}/lib/libcurl.dylib DESTINATION ${CMAKE_INSTALL_PREFIX}/skipper.app/Contents/Frameworks FOLLOW_SYMLINK_CHAIN)
+    file(COPY ${CMAKE_INSTALL_PREFIX}/lib/libspdlog.dylib DESTINATION ${CMAKE_INSTALL_PREFIX}/skipper.app/Contents/Frameworks FOLLOW_SYMLINK_CHAIN)
+    file(GET_RUNTIME_DEPENDENCIES
+        RESOLVED_DEPENDENCIES_VAR resolved_dependencies
+        UNRESOLVED_DEPENDENCIES_VAR unresolved_dependencies
+        CONFLICTING_DEPENDENCIES_PREFIX conflict_dependencies
+        EXECUTABLES ${CMAKE_INSTALL_PREFIX}/skipper.app/Contents/MacOS/skipper
+        LIBRARIES ${CMAKE_INSTALL_PREFIX}/lib/libcurl.4.dylib
+        BUNDLE_EXECUTABLE ${CMAKE_INSTALL_PREFIX}/skipper.app/Contents/MacOS/skipper
+    )
+    message(STATUS "resolved_dependencies=${resolved_dependencies}")
+    message(STATUS "unresolved_dependencies=${unresolved_dependencies}")
+    message(STATUS "conflict_dependencies=${conflict_dependencies}")
+]])
 
 message(STATUS APP_VERSION=${APP_VERSION})
 message(STATUS QT_VERSION=${Qt6_VERSION})
