@@ -3,17 +3,26 @@ project(hearththone_skipper)
 
 set(CMAKE_CXX_STANDARD 20)
 
+if (NOT APP_VERSION)    # shallow clone 的情况下无法获取到 tag
+    execute_process(
+            COMMAND git describe --tags
+            OUTPUT_VARIABLE APP_VERSION
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+endif ()
+if (NOT APP_VERSION)
+    set(APP_VERSION "v0.0.1")
+endif ()
+string(REGEX MATCH "[0-9]+\\.[0-9]+\\.[0-9]+" BUNDLE_VERSION ${APP_VERSION})
+
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets)
 
-include(ExternalProject)
 
 # qt_standard_project_setup()
 # 防止AUTO_MOC属性污染依赖库 手动设置 AUTO_MOC
 set(SRC_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
-qt_add_executable(skipper
-
-)
+qt_add_executable(skipper)
 target_sources(skipper PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/app.cpp
@@ -45,6 +54,8 @@ set_target_properties(skipper PROPERTIES
         WIN32_EXECUTABLE ON
         MACOSX_BUNDLE ON
         MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/info.plist
+        MACOSX_BUNDLE_BUNDLE_VERSION ${BUNDLE_VERSION}
+        MACOSX_BUNDLE_SHORT_VERSION_STRING ${APP_VERSION}
 )
 set_target_properties(qcurl PROPERTIES
         AUTOMOC ON
@@ -73,6 +84,11 @@ set(BUILD_TESTING OFF)
 set(CURL_USE_LIBPSL OFF)
 set(CURL_ENABLE_SSL OFF)
 set(ENABLE_CURL_MANUAL OFF)
+set(CURL_USE_LIBSSH2 OFF)
+set(CURL_BROTLI OFF)
+set(CURL_ZSTD OFF)
+set(ENABLE_IPV6 OFF)
+set(USE_NGHTTP2 OFF)
 FetchContent_Declare(
         libcurl
         URL https://curl.se/download/curl-8.17.0.zip
@@ -95,16 +111,6 @@ qt_generate_deploy_app_script(
         NO_UNSUPPORTED_PLATFORM_ERROR
 )
 install(SCRIPT ${deploy_script})
-if (NOT APP_VERSION)    # shallow clone 的情况下无法获取到 tag
-    execute_process(
-            COMMAND git describe --tags
-            OUTPUT_VARIABLE APP_VERSION
-            OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-endif ()
-if (NOT APP_VERSION)
-    set(APP_VERSION "unknown")
-endif ()
 target_compile_definitions(skipper PRIVATE APP_VERSION="${APP_VERSION}")
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
