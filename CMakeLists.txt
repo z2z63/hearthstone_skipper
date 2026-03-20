@@ -16,7 +16,13 @@ endif ()
 string(REGEX MATCH "[0-9]+\\.[0-9]+\\.[0-9]+" BUNDLE_VERSION ${APP_VERSION})
 
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets)
-
+get_target_property(_qmake_executable Qt6::qmake IMPORTED_LOCATION)
+execute_process(
+        COMMAND "${_qmake_executable}" -query QT_INSTALL_PLUGINS
+        OUTPUT_VARIABLE QT_PLUGINS_DIR
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+message(STATUS QT_PLUGINS_DIR=${QT_PLUGINS_DIR})
 
 # qt_standard_project_setup()
 # 防止AUTO_MOC属性污染依赖库 手动设置 AUTO_MOC
@@ -85,10 +91,13 @@ set(CURL_USE_LIBPSL OFF)
 set(CURL_ENABLE_SSL OFF)
 set(ENABLE_CURL_MANUAL OFF)
 set(CURL_USE_LIBSSH2 OFF)
-set(CURL_BROTLI OFF)
-set(CURL_ZSTD OFF)
+set(CURL_BROTLI OFF CACHE STRING "Build curl with brotli support (AUTO, ON or OFF)")
+set(CURL_ZSTD OFF CACHE STRING "Build curl with zstd support (AUTO, ON or OFF)")
+set(HTTP_ONLY ON CACHE BOOL "Disable all protocols except HTTP")
+set(CURL_DISABLE_WEBSOCKETS ON CACHE BOOL "Disable WebSocket")
 set(ENABLE_IPV6 OFF)
 set(USE_NGHTTP2 OFF)
+set(USE_LIBIDN2 OFF)
 FetchContent_Declare(
         libcurl
         URL https://curl.se/download/curl-8.17.0.zip
@@ -102,13 +111,12 @@ target_link_libraries(qcurl PRIVATE Qt6::Core PUBLIC CURL::libcurl)
 
 install(TARGETS skipper
         BUNDLE DESTINATION .
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
 qt_generate_deploy_app_script(
         TARGET skipper
         OUTPUT_SCRIPT deploy_script
-        NO_UNSUPPORTED_PLATFORM_ERROR
+        NO_PLUGINS
 )
 install(SCRIPT ${deploy_script})
 target_compile_definitions(skipper PRIVATE APP_VERSION="${APP_VERSION}")
@@ -117,22 +125,12 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebIn
     target_compile_definitions(skipper PRIVATE SKIPPER_DEBUG)
 endif ()
 
-
-install(CODE [[
-    file(COPY ${CMAKE_INSTALL_PREFIX}/lib/libcurl.dylib DESTINATION ${CMAKE_INSTALL_PREFIX}/skipper.app/Contents/Frameworks FOLLOW_SYMLINK_CHAIN)
-    file(COPY ${CMAKE_INSTALL_PREFIX}/lib/libspdlog.dylib DESTINATION ${CMAKE_INSTALL_PREFIX}/skipper.app/Contents/Frameworks FOLLOW_SYMLINK_CHAIN)
-    file(GET_RUNTIME_DEPENDENCIES
-        RESOLVED_DEPENDENCIES_VAR resolved_dependencies
-        UNRESOLVED_DEPENDENCIES_VAR unresolved_dependencies
-        CONFLICTING_DEPENDENCIES_PREFIX conflict_dependencies
-        EXECUTABLES ${CMAKE_INSTALL_PREFIX}/skipper.app/Contents/MacOS/skipper
-        LIBRARIES ${CMAKE_INSTALL_PREFIX}/lib/libcurl.4.dylib
-        BUNDLE_EXECUTABLE ${CMAKE_INSTALL_PREFIX}/skipper.app/Contents/MacOS/skipper
-    )
-    message(STATUS "resolved_dependencies=${resolved_dependencies}")
-    message(STATUS "unresolved_dependencies=${unresolved_dependencies}")
-    message(STATUS "conflict_dependencies=${conflict_dependencies}")
-]])
+configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/skipper-install.cmake.in
+        ${CMAKE_CURRENT_BINARY_DIR}/skipper-install.cmake
+        @ONLY
+)
+install(SCRIPT ${CMAKE_CURRENT_BINARY_DIR}/skipper-install.cmake)
 
 message(STATUS APP_VERSION=${APP_VERSION})
 message(STATUS QT_VERSION=${Qt6_VERSION})

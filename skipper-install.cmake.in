@@ -1,0 +1,21 @@
+file(COPY ${CMAKE_INSTALL_PREFIX}/lib/libcurl.dylib DESTINATION ${CMAKE_INSTALL_PREFIX}/skipper.app/Contents/Frameworks FOLLOW_SYMLINK_CHAIN)
+file(COPY ${CMAKE_INSTALL_PREFIX}/lib/libspdlog.dylib DESTINATION ${CMAKE_INSTALL_PREFIX}/skipper.app/Contents/Frameworks FOLLOW_SYMLINK_CHAIN)
+
+file(COPY @QT_PLUGINS_DIR@/platforms/libqcocoa.dylib DESTINATION ${CMAKE_INSTALL_PREFIX}/skipper.app/Contents/plugins/platforms/)
+file(COPY @QT_PLUGINS_DIR@/styles/libqmacstyle.dylib DESTINATION ${CMAKE_INSTALL_PREFIX}/skipper.app/Contents/plugins/styles/)
+
+file(GET_RUNTIME_DEPENDENCIES
+        RESOLVED_DEPENDENCIES_VAR resolved_dependencies
+        UNRESOLVED_DEPENDENCIES_VAR unresolved_dependencies
+        CONFLICTING_DEPENDENCIES_PREFIX conflict_dependencies
+        EXECUTABLES ${CMAKE_INSTALL_PREFIX}/skipper.app/Contents/MacOS/skipper
+        BUNDLE_EXECUTABLE ${CMAKE_INSTALL_PREFIX}/skipper.app/Contents/MacOS/skipper
+)
+message(STATUS "resolved_dependencies=${resolved_dependencies}")
+message(STATUS "unresolved_dependencies=${unresolved_dependencies}")
+message(STATUS "conflict_dependencies=${conflict_dependencies}")
+execute_process(
+        COMMAND codesign -s - --force --deep ${CMAKE_INSTALL_PREFIX}/skipper.app
+        COMMAND_ECHO STDOUT
+        COMMAND_ERROR_IS_FATAL ANY
+)
