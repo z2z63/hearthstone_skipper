@@ -28,7 +28,7 @@ std::optional<ClashConfig> AppSettings::clash_config() const {
     }
     if (external_controller_type_ == "TCPIP") {
         // 使用 TCP 连接 clash 核心，external_controller 必填
-        if (external_controller.isValid() || external_controller.toString().isEmpty()) {
+        if (!external_controller.isValid() || external_controller.toString().isEmpty()) {
             return {};
         }
         return std::optional(ClashConfig{
