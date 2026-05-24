@@ -55,6 +55,19 @@ void AppSettings::clash_config_set(const ClashConfig &value) {
     _settings.sync();
 }
 
+bool AppSettings::float_button_enabled() const {
+    QVariant val = _settings.value("float_button_enabled");
+    if (!val.isValid()) {
+        return true; // 默认开启
+    }
+    return val.toBool();
+}
+
+void AppSettings::float_button_enabled_set(bool enabled) {
+    _settings.setValue("float_button_enabled", enabled);
+    _settings.sync();
+}
+
 AppSettings &AppSettings::instance() {
     static AppSettings app_settings;
     return app_settings;

@@ -10,9 +10,11 @@
 #include <QUrl>
 
 Skipper *App::skipper;
+App *App::_instance = nullptr;
 
 
 App::App(QObject *parent) : QObject(parent), trayIcon(nullptr) {
+    _instance = this;
     initLogger();
     if (std::optional clash_config = AppSettings::instance().clash_config(); !clash_config.has_value()) {
         qeasy = new ConfigAwareQEasy({});
@@ -36,7 +38,9 @@ App::App(QObject *parent) : QObject(parent), trayIcon(nullptr) {
 
     createActions();
     createTrayIcon();
-    floatButton = new FloatButton();
+    if (AppSettings::instance().float_button_enabled()) {
+        floatButton = new FloatButton();
+    }
     assert(trayIcon != nullptr);
     trayIcon->show();
     settingDialog->show();
@@ -88,4 +92,14 @@ void App::onFunction2() {
 
 void App::onFunction3() {
     settingDialog->show();
+}
+
+void App::setFloatButtonEnabled(bool enabled) {
+    AppSettings::instance().float_button_enabled_set(enabled);
+    if (enabled && floatButton == nullptr) {
+        floatButton = new FloatButton();
+    } else if (!enabled && floatButton != nullptr) {
+        delete floatButton;
+        floatButton = nullptr;
+    }
 }
