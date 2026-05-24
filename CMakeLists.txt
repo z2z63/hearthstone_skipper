@@ -117,6 +117,7 @@ if (APPLE)
         ${CMAKE_CURRENT_SOURCE_DIR}/src/platform/window_listener.mm
         ${CMAKE_CURRENT_SOURCE_DIR}/include/window_listener.h
     )
+    target_compile_options(macos_specific PRIVATE "-fobjc-arc")
     target_include_directories(macos_specific PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
     target_link_libraries(macos_specific PRIVATE Qt6::Widgets spdlog "-framework Foundation -framework AppKit")
     target_link_libraries(skipper PRIVATE macos_specific)

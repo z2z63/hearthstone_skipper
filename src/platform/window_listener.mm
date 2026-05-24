@@ -1,5 +1,4 @@
 #include <Cocoa/Cocoa.h>
-#include <functional>
 
 #include "spdlog/spdlog.h"
 #include "window_listener.h"
@@ -16,7 +15,10 @@
 @property int retryCount;
 @end
 
+static NSString *bundleIdentifier = @"unity.Blizzard Entertainment.Hearthstone";
+
 @implementation AppLaunchObserver
+
 - (instancetype)initWithListener:(HearthStoneWindowListener *)listener {
     self = [super init];
     self.logger = spdlog::get("skipper");
@@ -49,22 +51,25 @@
     return self;
 }
 
-void windowPositionUpdateCallback(AXObserverRef observer, AXUIElementRef element, CFStringRef notification,
-                                  void *refcon) {
+- (void)dealloc {
+    [[[NSWorkspace sharedWorkspace] notificationCenter] removeObserver:self];
+    [self closeListener];
+    if (self.hearthstoneWindowRef) {
+        CFRelease(self.hearthstoneWindowRef);
+    }
+}
+
+static void windowPositionUpdateCallback(AXObserverRef, AXUIElementRef, CFStringRef, void *refcon) {
     auto *self = (__bridge AppLaunchObserver *)refcon;
-    auto rect = [self getWindowLocation];
+    QRect rect = [self getWindowLocation];
     if (rect.isNull()) {
         return;
     }
     emit self.listener->onAppMove(rect);
 }
 
-// static NSString *bundleIdentifier = @"org.alacritty";
-static NSString *bundleIdentifier = @"unity.Blizzard Entertainment.Hearthstone";
-
 - (void)appGetFocused:(NSNotification *)notification {
-    NSDictionary *userInfo = [notification userInfo];
-    NSRunningApplication *app = userInfo[NSWorkspaceApplicationKey];
+    NSRunningApplication *app = notification.userInfo[NSWorkspaceApplicationKey];
     if (![app.bundleIdentifier isEqual:bundleIdentifier]) {
         return;
     }
@@ -79,31 +84,22 @@ static NSString *bundleIdentifier = @"unity.Blizzard Entertainment.Hearthstone";
 }
 
 - (void)appLoseFocused:(NSNotification *)notification {
-    NSDictionary *userInfo = [notification userInfo];
-    NSRunningApplication *app = userInfo[NSWorkspaceApplicationKey];
+    NSRunningApplication *app = notification.userInfo[NSWorkspaceApplicationKey];
     if ([app.bundleIdentifier isEqual:bundleIdentifier]) {
         emit self.listener->onAppLoseFocus();
     }
 }
 
 - (void)appLaunched:(NSNotification *)notification {
-    NSDictionary *userInfo = [notification userInfo];
-    NSRunningApplication *app = userInfo[NSWorkspaceApplicationKey];
+    NSRunningApplication *app = notification.userInfo[NSWorkspaceApplicationKey];
     if (![app.bundleIdentifier isEqual:bundleIdentifier]) {
         return;
     }
     [self startRetrySetupListener:app.processIdentifier];
-    //    QRect rect = [self getWindowLocation];
-    //    if (rect.isNull()) {
-    //        SPDLOG_LOGGER_INFO(_logger, "window rect is null");
-    //        return;
-    //    }
-    //    emit self.listener->onAppLaunch(rect);
 }
 
 - (void)appTerminated:(NSNotification *)notification {
-    NSDictionary *userInfo = [notification userInfo];
-    NSRunningApplication *app = userInfo[NSWorkspaceApplicationKey];
+    NSRunningApplication *app = notification.userInfo[NSWorkspaceApplicationKey];
     if (![app.bundleIdentifier isEqual:bundleIdentifier]) {
         return;
     }
@@ -202,6 +198,12 @@ static NSString *bundleIdentifier = @"unity.Blizzard Entertainment.Hearthstone";
     CFRelease(windows);
 
     AXObserverCreate(self.pid, windowPositionUpdateCallback, &self->_windowObserver);
+    if (self.windowObserver == nullptr) {
+        SPDLOG_LOGGER_WARN(_logger, "Failed to create AXObserver for pid {}", self.pid);
+        CFRelease(self.hearthstoneWindowRef);
+        self.hearthstoneWindowRef = nullptr;
+        return;
+    }
     AXObserverAddNotification(self.windowObserver, self.hearthstoneWindowRef, kAXMovedNotification,
                               (__bridge void *)self);
     AXObserverAddNotification(self.windowObserver, self.hearthstoneWindowRef, kAXResizedNotification,
@@ -220,10 +222,11 @@ static NSString *bundleIdentifier = @"unity.Blizzard Entertainment.Hearthstone";
         self.windowObserver = nullptr;
     }
 }
+
 @end
 
 void setWindowStayOnTop(QWidget *widget) {
-    auto view = (NSView *)widget->winId();
+    auto *view = (__bridge NSView *)(void *)widget->winId();
     NSWindow *window = view.window;
     window.level = NSFloatingWindowLevel;
     window.collectionBehavior =
@@ -231,5 +234,11 @@ void setWindowStayOnTop(QWidget *widget) {
 }
 
 HearthStoneWindowListener::HearthStoneWindowListener(QObject *parent) : QObject(parent) {
-    static AppLaunchObserver *observer = [[AppLaunchObserver alloc] initWithListener:this];
+    AppLaunchObserver *observer = [[AppLaunchObserver alloc] initWithListener:this];
+    _observer = (__bridge_retained void *)observer;
+}
+
+HearthStoneWindowListener::~HearthStoneWindowListener() {
+    AppLaunchObserver *observer = (__bridge_transfer AppLaunchObserver *)_observer;
+    (void)observer; // ARC releases it, dealloc runs
 }

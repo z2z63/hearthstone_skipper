@@ -12,6 +12,7 @@ class HearthStoneWindowListener: public QObject{
     Q_OBJECT
   public:
     HearthStoneWindowListener(QObject* parent = nullptr);
+    ~HearthStoneWindowListener() override;
 
   signals:
     void onAppLaunch(QRect rect);
@@ -19,4 +20,7 @@ class HearthStoneWindowListener: public QObject{
     void onAppLoseFocus();
     void onAppMove(QRect rect);
     void onAppTerminate();
+
+ private:
+    void *_observer = nullptr;  // AppLaunchObserver*
 };
