@@ -22,6 +22,11 @@ Skipper::Skipper(ConfigAwareQEasy *qeasy, QObject *parent)
 Skipper::~Skipper() = default;
 
 void Skipper::skip() {
+    if (_busy) {
+        SPDLOG_LOGGER_INFO(_logger, "skip() called while busy, ignoring");
+        return;
+    }
+    _busy = true;
     getConnection();
 }
 
@@ -49,12 +54,14 @@ void Skipper::handleGetConnectionThenKill(const QString &error, long code, const
     if (!error.isEmpty()) {
         SPDLOG_LOGGER_ERROR(_logger, "GET {} failed: {}", url, error.toStdString());
         _logger->flush();
+        _busy = false;
         emit skipFinished(false);
         return;
     }
     if (code / 100 != 2) {
         SPDLOG_LOGGER_ERROR(_logger, "GET {} code={} body={}", url, code, body.toStdString());
         _logger->flush();
+        _busy = false;
         emit skipFinished(false);
         return;
     }
@@ -62,6 +69,7 @@ void Skipper::handleGetConnectionThenKill(const QString &error, long code, const
     if (!doc["connections"].isArray()) {
         SPDLOG_LOGGER_WARN(_logger, "Failed to get connection, malformed json {}", body.toStdString());
         _logger->flush();
+        _busy = false;
         emit skipFinished(false);
         return;
     }
@@ -79,6 +87,7 @@ void Skipper::handleGetConnectionThenKill(const QString &error, long code, const
     if (connection_to_kill.empty()) {
         SPDLOG_LOGGER_WARN(_logger, "No connection to kill");
         _logger->flush();
+        _busy = false;
         emit skipFinished(false);
         return;
     }
@@ -98,15 +107,18 @@ void Skipper::handleKillConnection(const QString &error, long code, const QByteA
     if (!error.isEmpty()) {
         SPDLOG_LOGGER_ERROR(_logger, "DELETE {} failed: {}", url, error.toStdString());
         _logger->flush();
+        _busy = false;
         emit skipFinished(false);
         return;
     }
     if (code / 100 != 2) {
         SPDLOG_LOGGER_ERROR(_logger, "DELETE {} failed code={} body={}", url, code, body.toStdString());
         _logger->flush();
+        _busy = false;
         emit skipFinished(false);
         return;
     }
     SPDLOG_LOGGER_INFO(_logger, "DELETE {}", url);
+    _busy = false;
     emit skipFinished(true);
 }
