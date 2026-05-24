@@ -28,7 +28,7 @@ std::optional<ClashConfig> AppSettings::clash_config() const {
     }
     if (external_controller_type_ == "TCPIP") {
         // 使用 TCP 连接 clash 核心，external_controller 必填
-        if (external_controller.isValid() || external_controller.toString().isEmpty()) {
+        if (!external_controller.isValid() || external_controller.toString().isEmpty()) {
             return {};
         }
         return std::optional(ClashConfig{
@@ -52,6 +52,19 @@ void AppSettings::clash_config_set(const ClashConfig &value) {
     _settings.setValue("external_controller", QString::fromStdString(value.external_controller));
     _settings.setValue("secret", QString::fromStdString(value.secret));
     _settings.setValue("unix_socket", QString::fromStdString(value.unix_socket));
+    _settings.sync();
+}
+
+bool AppSettings::float_button_enabled() const {
+    QVariant val = _settings.value("float_button_enabled");
+    if (!val.isValid()) {
+        return true; // 默认开启
+    }
+    return val.toBool();
+}
+
+void AppSettings::float_button_enabled_set(bool enabled) {
+    _settings.setValue("float_button_enabled", enabled);
     _settings.sync();
 }
 

@@ -4,10 +4,15 @@
 #include "skipper.h"
 
 #include <QBoxLayout>
+#include <QCheckBox>
 #include <QComboBox>
 #include <QDialog>
 #include <QFormLayout>
+#include <QGroupBox>
 #include <QLabel>
+#include <QLineEdit>
+#include <QPushButton>
+#include <QTimer>
 #include <QtGui/QWindow>
 
 class SettingTab final : public QWidget {
@@ -30,6 +35,7 @@ class SettingTab final : public QWidget {
 
   private:
     QBoxLayout *layout_outer;
+    QGroupBox *clash_group;
     QFormLayout *form_layout;
     QLineEdit *external_controller_edit;
     QLineEdit *secret_edit;
@@ -37,6 +43,8 @@ class SettingTab final : public QWidget {
     QComboBox *external_controller_type_edit;
     QLabel *hint_label;
     QPushButton *test_btn;
+    QGroupBox *float_button_group;
+    QCheckBox *float_button_checkbox;
     ClashConfig _config;
     QTimer *timer;
 };

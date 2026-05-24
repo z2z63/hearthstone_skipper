@@ -28,4 +28,5 @@ class Skipper : public QObject {
   private:
     ConfigAwareQEasy *_qeasy;
     std::shared_ptr<spdlog::logger> _logger;
+    bool _busy = false;
 };

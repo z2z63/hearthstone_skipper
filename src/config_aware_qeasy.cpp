@@ -19,6 +19,7 @@ void ConfigAwareQEasy::test() {
     if (_config.external_controller_type == ExternalControllerType::UNIX_DOMAIN && _config.unix_socket.empty()) {
         SPDLOG_LOGGER_INFO(_logger, "unix domain is empty");
         emit testFinished(false, "skipper未完成设置");
+        return;
     }
     curl_easy_setopt(curl, CURLOPT_URL, _config.version().c_str());
     connect(this, &QCurlEasy::done, this, &ConfigAwareQEasy::handle_version_response, Qt::SingleShotConnection);

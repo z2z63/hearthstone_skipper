@@ -3,7 +3,9 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleVersion</key>
-	<string>0.0.1</string>
+	<string>${MACOSX_BUNDLE_BUNDLE_VERSION}</string>
+    <key>CFBundleShortVersionString</key>
+    <string>${MACOSX_BUNDLE_SHORT_VERSION_STRING}</string>
 	<key>CFBundleName</key>
 	<string>HearthStone Skipper</string>
 	<key>CFBundleIdentifier</key>

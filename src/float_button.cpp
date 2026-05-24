@@ -1,12 +1,21 @@
 #include "float_button.h"
 #include "app.h"
 #include "window_listener.h"
+#include <QFontDatabase>
 #include <QMouseEvent>
+#include <QPainter>
+#include <QPainterPath>
 #include <QTimer>
 
 FloatButton::FloatButton() : QPushButton("一键拔线"), _logger(spdlog::get("skipper")) {
     windowListener = new HearthStoneWindowListener(this);
-    setStyleSheet("background: transparent;font-size:30px;color:red");
+
+    QFont font;
+    font.setFamily("LiShu");
+    font.setPixelSize(42);
+    setFont(font);
+
+    setStyleSheet("background: transparent; color: white;");
 
     setWindowFlags(Qt::FramelessWindowHint | Qt::WindowDoesNotAcceptFocus);
     setAttribute(Qt::WA_ShowWithoutActivating);
@@ -36,6 +45,25 @@ FloatButton::FloatButton() : QPushButton("一键拔线"), _logger(spdlog::get("s
         setVisible(true);
     });
     connect(windowListener, &HearthStoneWindowListener::onAppTerminate, this, [this]() { setVisible(false); });
+}
+
+void FloatButton::paintEvent(QPaintEvent *) {
+    QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing);
+
+    QRect rect = this->rect().adjusted(2, 2, -2, -2);
+    QPainterPath path;
+    path.addText(rect.bottomLeft(), font(), text());
+
+    // 先画黑色描边
+    painter.setPen(QPen(Qt::black, 1.5, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+    painter.setBrush(Qt::NoBrush);
+    painter.drawPath(path);
+
+    // 再画白色填充
+    painter.setPen(Qt::NoPen);
+    painter.setBrush(Qt::white);
+    painter.drawPath(path);
 }
 
 void FloatButton::mousePressEvent(QMouseEvent *event) {

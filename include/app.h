@@ -33,18 +33,21 @@ private:
 
 public:
     static Skipper* skipper;
+    static App* instance() { return _instance; }
+    void setFloatButtonEnabled(bool enabled);
 private:
 
-    QSystemTrayIcon* trayIcon;
+    QSystemTrayIcon* trayIcon = nullptr;
     QMenu* trayIconMenu{};
+    static App* _instance;
 
     QAction* function1Action{};
     QAction* function2Action{};
     QAction* function3Action{};
     QAction* quitAction{};
-    SettingDialog* settingDialog;
-    FloatButton* floatButton;
+    SettingDialog* settingDialog = nullptr;
+    FloatButton* floatButton = nullptr;
 
-    ConfigAwareQEasy* qeasy;
+    ConfigAwareQEasy* qeasy = nullptr;
 };
 

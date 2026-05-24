@@ -34,6 +34,25 @@ SettingDialog::~SettingDialog() = default;
 
 SettingTab::SettingTab(QWidget *parent) : QWidget(parent), _config(App::skipper->config()), timer(new QTimer(parent)) {
     layout_outer = new QVBoxLayout(this);
+
+    // ===== 必要配置 =====
+    clash_group = new QGroupBox("必要配置", this);
+    clash_group->setAlignment(Qt::AlignHCenter);
+    static const char groupBoxStyle[] =
+        "QGroupBox {"
+        "  border: 1px solid #cccccc;"
+        "  border-radius: 6px;"
+        "  margin-top: 12px;"
+        "  padding-top: 14px;"
+        "  font-weight: bold;"
+        "}"
+        "QGroupBox::title {"
+        "  subcontrol-origin: margin;"
+        "  left: 12px;"
+        "  padding: 0 6px;"
+        "}";
+    clash_group->setStyleSheet(groupBoxStyle);
+    auto *clash_layout = new QVBoxLayout(clash_group);
     form_layout = new QFormLayout();
 
     constexpr int IDX_TCPIP = 0;
@@ -61,7 +80,7 @@ SettingTab::SettingTab(QWidget *parent) : QWidget(parent), _config(App::skipper-
     connect(unix_socket_edit, &QLineEdit::textEdited, this,
             [this](const QString &text) { _config.unix_socket = text.toStdString(); });
     hint_label = new QLabel(this);
-    hint_label->setMinimumHeight(0);
+    hint_label->hide();
     connect(external_controller_edit, &QLineEdit::editingFinished, this, &SettingTab::onFormComplete);
     connect(secret_edit, &QLineEdit::editingFinished, this, &SettingTab::onFormComplete);
     connect(unix_socket_edit, &QLineEdit::editingFinished, this, &SettingTab::onFormComplete);
@@ -79,13 +98,31 @@ SettingTab::SettingTab(QWidget *parent) : QWidget(parent), _config(App::skipper-
     test_btn->setMaximumWidth(80);
 
     connect(test_btn, &QPushButton::clicked, this, &SettingTab::onTestBtnClicked);
-    layout_outer->addLayout(form_layout);
-    layout_outer->addWidget(hint_label, 0, Qt::AlignHCenter);
-    layout_outer->addWidget(test_btn, 0, Qt::AlignHCenter);
     form_layout->addRow("外部控制器类型", external_controller_type_edit);
     form_layout->addRow("外部控制器", external_controller_edit);
     form_layout->addRow("密钥", secret_edit);
     form_layout->addRow("套接字文件", unix_socket_edit);
+    clash_layout->addLayout(form_layout);
+    clash_layout->addWidget(test_btn, 0, Qt::AlignHCenter);
+    clash_layout->addWidget(hint_label, 0, Qt::AlignHCenter);
+    layout_outer->addWidget(clash_group);
+
+    // ===== 偏好设置 =====
+    float_button_group = new QGroupBox("偏好设置", this);
+    float_button_group->setStyleSheet(groupBoxStyle);
+    auto *float_layout = new QVBoxLayout(float_button_group);
+    float_button_checkbox = new QCheckBox("在游戏窗口右上角显示一键拔线按钮", this);
+    float_button_checkbox->setChecked(AppSettings::instance().float_button_enabled());
+    auto *float_hint = new QLabel("需要授予辅助功能权限，关闭后仍可通过系统菜单栏拔线", this);
+    float_hint->setStyleSheet("color: gray; font-size: 12px;");
+    float_hint->setWordWrap(true);
+    connect(float_button_checkbox, &QCheckBox::toggled, this, [](bool checked) {
+        App::instance()->setFloatButtonEnabled(checked);
+    });
+    float_layout->addWidget(float_button_checkbox);
+    float_layout->addWidget(float_hint);
+    layout_outer->addWidget(float_button_group);
+
     setupVisibility();
 }
 
@@ -94,8 +131,9 @@ void SettingTab::onFormComplete() const {
     settings.clash_config_set(_config);
     App::skipper->setConfig(_config);
     hint_label->setText("已保存到设置");
+    hint_label->show();
     timer->start(1000);
-    timer->callOnTimeout([this] { hint_label->clear(); });
+    timer->callOnTimeout([this] { hint_label->hide(); });
 }
 
 void SettingTab::onTestBtnClicked() {
@@ -114,10 +152,10 @@ void SettingTab::onTestBtnClicked() {
 }
 
 void SettingTab::setHitText(const QString &text) const {
-    hint_label->clear();
     hint_label->setText(text);
+    hint_label->show();
     timer->start(3000);
-    timer->callOnTimeout([this] { hint_label->clear(); });
+    timer->callOnTimeout([this] { hint_label->hide(); });
 }
 
 SettingTab::~SettingTab() = default;
