@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.30)
-project(hearththone_skipper)
+project(hearththone_skipper LANGUAGES CXX OBJCXX)
 
 set(CMAKE_CXX_STANDARD 20)
 
@@ -39,6 +39,7 @@ target_sources(skipper PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src/logger.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/setting_dialog.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/skipper.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/float_button.cpp
 )
 
 target_sources(skipper PRIVATE
@@ -50,6 +51,8 @@ target_sources(skipper PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/include/logger.h
         ${CMAKE_CURRENT_SOURCE_DIR}/include/setting_dialog.h
         ${CMAKE_CURRENT_SOURCE_DIR}/include/skipper.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/float_button.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/window_listener.h
 )
 target_include_directories(skipper PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
@@ -108,6 +111,16 @@ FetchContent_MakeAvailable(yaml-cpp spdlog libcurl)
 
 target_link_libraries(skipper PRIVATE Qt6::Core Qt6::Gui Qt6::Widgets yaml-cpp spdlog qcurl)
 target_link_libraries(qcurl PRIVATE Qt6::Core PUBLIC CURL::libcurl)
+
+if (APPLE)
+    qt_add_library(macos_specific STATIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/platform/window_listener.mm
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/window_listener.h
+    )
+    target_include_directories(macos_specific PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+    target_link_libraries(macos_specific PRIVATE Qt6::Widgets spdlog "-framework Foundation -framework AppKit")
+    target_link_libraries(skipper PRIVATE macos_specific)
+endif ()
 
 install(TARGETS skipper
         BUNDLE DESTINATION .
