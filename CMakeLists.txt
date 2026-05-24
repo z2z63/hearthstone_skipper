@@ -42,6 +42,11 @@ target_sources(skipper PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src/float_button.cpp
 )
 
+qt_add_resources(skipper "fonts"
+    PREFIX "/fonts"
+    FILES src/fonts/lishu.ttf
+)
+
 target_sources(skipper PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/include/app.h
         ${CMAKE_CURRENT_SOURCE_DIR}/include/app_settings.h

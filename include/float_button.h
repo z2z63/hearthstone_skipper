@@ -11,6 +11,7 @@ class FloatButton : public QPushButton {
 
   protected:
     void mousePressEvent(QMouseEvent *event) override;
+    void paintEvent(QPaintEvent *event) override;
 
   public slots:
     void onBtnClicked();
