@@ -56,11 +56,12 @@ QCurl::QCurl(QObject *parent) : QObject(parent), _timer(new QTimer(this)) {
     connect(_timer, &QTimer::timeout, this, [this] {
         int running_handles;
         curl_multi_socket_action(_curlm, CURL_SOCKET_TIMEOUT, 0, &running_handles);
+        handleSocketAction(nullptr, CURL_SOCKET_TIMEOUT, 0);
     });
 }
 
 // Extracted from duplicated lambda bodies to centralize action & completion dispatch
-void QCurl::handleSocketAction(CURL *easy, curl_socket_t s, int mask) {
+void QCurl::handleSocketAction(CURL *, curl_socket_t s, int mask) {
     int running_handles;
     curl_multi_socket_action(_curlm, s, mask, &running_handles);
     int n_msgs;
@@ -71,8 +72,7 @@ void QCurl::handleSocketAction(CURL *easy, curl_socket_t s, int mask) {
         }
         if (msg->msg == CURLMSG_DONE) {
             QCurlEasy *qeasy = nullptr;
-
-            curl_easy_getinfo(easy, CURLINFO_PRIVATE, &qeasy);
+            curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &qeasy);
             if (qeasy) {
                 curl_multi_remove_handle(_curlm, qeasy->curl);
                 qeasy->emit_done(msg->data.result);
@@ -81,7 +81,7 @@ void QCurl::handleSocketAction(CURL *easy, curl_socket_t s, int mask) {
     }
 }
 
-int QCurl::timer_callback(CURLM *multi, long timeout_ms, QCurl *qcurl) {
+int QCurl::timer_callback(CURLM *, long timeout_ms, QCurl *qcurl) {
     if (timeout_ms < 0) {
         qcurl->_timer->stop();
     } else {
