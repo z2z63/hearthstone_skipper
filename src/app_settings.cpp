@@ -14,6 +14,9 @@ std::optional<ClashConfig> AppSettings::clash_config() const {
         return {};
     }
     QString external_controller_type = external_controller_type_.toString();
+    if (external_controller_type == "NATIVE") {
+        return std::optional(ClashConfig{.external_controller_type = ExternalControllerType::NATIVE});
+    }
     if (external_controller_type == "UNIX_DOMAIN") {
         // 使用 unix socket 连接 clash 核心，unix_socket 必填
         if (!unix_socket_.isValid() || unix_socket_.toString().isEmpty()) {
@@ -46,6 +49,8 @@ void AppSettings::clash_config_set(const ClashConfig &value) {
         _settings.setValue("external_controller_type", "TCPIP");
     } else if (value.external_controller_type == ExternalControllerType::UNIX_DOMAIN) {
         _settings.setValue("external_controller_type", "UNIX_DOMAIN");
+    } else if (value.external_controller_type == ExternalControllerType::NATIVE) {
+        _settings.setValue("external_controller_type", "NATIVE");
     } else {
         _settings.setValue("external_controller_type", "NONE");
     }

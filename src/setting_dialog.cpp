@@ -32,11 +32,11 @@ SettingDialog::SettingDialog() : setting_tab(new SettingTab), about_tab(new Abou
 
 SettingDialog::~SettingDialog() = default;
 
-SettingTab::SettingTab(QWidget *parent) : QWidget(parent), _config(App::skipper->config()), timer(new QTimer(parent)) {
+SettingTab::SettingTab(QWidget *parent) : QWidget(parent), _config(App::skipper->config()), timer(new QTimer(this)) {
     layout_outer = new QVBoxLayout(this);
 
     // ===== 必要配置 =====
-    clash_group = new QGroupBox("必要配置", this);
+    clash_group = new QGroupBox("拔线方式", this);
     clash_group->setAlignment(Qt::AlignHCenter);
     static const char groupBoxStyle[] =
         "QGroupBox {"
@@ -57,13 +57,17 @@ SettingTab::SettingTab(QWidget *parent) : QWidget(parent), _config(App::skipper-
 
     constexpr int IDX_TCPIP = 0;
     constexpr int IDX_UNIX = 1;
+    constexpr int IDX_NATIVE = 2;
     external_controller_type_edit = new QComboBox(this);
     external_controller_type_edit->addItem("TCP/IP", "TCPIP");
     external_controller_type_edit->addItem("UNIX套接字", "UNIX_DOMAIN");
+    external_controller_type_edit->addItem("macOS 原生 PF（无需 Clash）", "NATIVE");
     if (_config.external_controller_type == ExternalControllerType::TCPIP) {
         external_controller_type_edit->setCurrentIndex(IDX_TCPIP);
     } else if (_config.external_controller_type == ExternalControllerType::UNIX_DOMAIN) {
         external_controller_type_edit->setCurrentIndex(IDX_UNIX);
+    } else if (_config.external_controller_type == ExternalControllerType::NATIVE) {
+        external_controller_type_edit->setCurrentIndex(IDX_NATIVE);
     }
 
     external_controller_edit = new QLineEdit(QString::fromStdString(_config.external_controller), this);
@@ -89,6 +93,8 @@ SettingTab::SettingTab(QWidget *parent) : QWidget(parent), _config(App::skipper-
             _config.external_controller_type = ExternalControllerType::TCPIP;
         } else if (index == IDX_UNIX) {
             _config.external_controller_type = ExternalControllerType::UNIX_DOMAIN;
+        } else if (index == IDX_NATIVE) {
+            _config.external_controller_type = ExternalControllerType::NATIVE;
         }
         onFormComplete();
         setupVisibility();
@@ -98,13 +104,18 @@ SettingTab::SettingTab(QWidget *parent) : QWidget(parent), _config(App::skipper-
     test_btn->setMaximumWidth(80);
 
     connect(test_btn, &QPushButton::clicked, this, &SettingTab::onTestBtnClicked);
-    form_layout->addRow("外部控制器类型", external_controller_type_edit);
+    form_layout->addRow("拔线后端", external_controller_type_edit);
     form_layout->addRow("外部控制器", external_controller_edit);
     form_layout->addRow("密钥", secret_edit);
     form_layout->addRow("套接字文件", unix_socket_edit);
     clash_layout->addLayout(form_layout);
     clash_layout->addWidget(test_btn, 0, Qt::AlignHCenter);
     clash_layout->addWidget(hint_label, 0, Qt::AlignHCenter);
+    auto *native_hint = new QLabel(
+        "原生 PF 模式不依赖 Clash；请先关闭 Clash/VPN 的 TUN。每次启动通常只需授权一次。", this);
+    native_hint->setStyleSheet("color: gray; font-size: 12px;");
+    native_hint->setWordWrap(true);
+    clash_layout->addWidget(native_hint);
     layout_outer->addWidget(clash_group);
 
     // ===== 偏好设置 =====
@@ -173,6 +184,10 @@ void SettingTab::setupVisibility() const {
         form_layout->setRowVisible(secret_edit, false);
         form_layout->setRowVisible(unix_socket_edit, true);
         unix_socket_edit->setText(QString::fromStdString(_config.unix_socket));
+    } else if (clash_config.external_controller_type == ExternalControllerType::NATIVE) {
+        form_layout->setRowVisible(external_controller_edit, false);
+        form_layout->setRowVisible(secret_edit, false);
+        form_layout->setRowVisible(unix_socket_edit, false);
     }
 }
 

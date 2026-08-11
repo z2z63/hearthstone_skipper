@@ -1,6 +1,7 @@
 #include "qcurl.h"
 #include <QSocketNotifier>
-#include <iostream>
+#include <QTimer>
+#include <cstring>
 
 [[maybe_unused]] int curl_init_code = curl_global_init(CURL_GLOBAL_ALL);
 
@@ -18,10 +19,27 @@ QCurlEasy::QCurlEasy(CURL *curl, QObject *parent) : QObject(parent), curl(curl) 
                      });
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, this);
     curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, error_buffer);
+    curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
+    curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT_MS, 750L);
+    curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, 2500L);
 }
 
-void QCurlEasy::perform() const {
-    curl_multi_add_handle(QCurl::instance()._curlm, curl);
+bool QCurlEasy::perform() {
+    if (running) {
+        return false;
+    }
+    data.clear();
+    memset(error_buffer, 0, sizeof(error_buffer));
+    const CURLMcode code = curl_multi_add_handle(QCurl::instance()._curlm, curl);
+    if (code != CURLM_OK) {
+        return false;
+    }
+    running = true;
+    return true;
+}
+
+bool QCurlEasy::isRunning() const {
+    return running;
 }
 
 QCurlEasy::~QCurlEasy() {
@@ -33,10 +51,11 @@ QCurlEasy::~QCurlEasy() {
 
 
 void QCurlEasy::emit_done(CURLcode curl_code) {
+    running = false;
     QString error;
-    if (curl_code != CURLE_OK || error_buffer[0] != 0) {
-        error = QString(error_buffer);
-        memset(&error_buffer, 0, sizeof(error_buffer));
+    if (curl_code != CURLE_OK) {
+        error = error_buffer[0] != 0 ? QString::fromUtf8(error_buffer)
+                                     : QString::fromUtf8(curl_easy_strerror(curl_code));
     }
     long http_code;
     curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
@@ -46,6 +65,7 @@ void QCurlEasy::emit_done(CURLcode curl_code) {
 
 
 QCurl::QCurl(QObject *parent) : QObject(parent), _timer(new QTimer(this)) {
+    _timer->setSingleShot(true);
     _curlm = curl_multi_init();
     curl_multi_setopt(_curlm, CURLMOPT_SOCKETFUNCTION, socket_callback);
     curl_multi_setopt(_curlm, CURLMOPT_SOCKETDATA, this);
@@ -54,8 +74,6 @@ QCurl::QCurl(QObject *parent) : QObject(parent), _timer(new QTimer(this)) {
 
     // 连接 timer 到 socket_action
     connect(_timer, &QTimer::timeout, this, [this] {
-        int running_handles;
-        curl_multi_socket_action(_curlm, CURL_SOCKET_TIMEOUT, 0, &running_handles);
         handleSocketAction(nullptr, CURL_SOCKET_TIMEOUT, 0);
     });
 }
@@ -85,12 +103,12 @@ int QCurl::timer_callback(CURLM *, long timeout_ms, QCurl *qcurl) {
     if (timeout_ms < 0) {
         qcurl->_timer->stop();
     } else {
-        qcurl->_timer->start((int)timeout_ms);
+        qcurl->_timer->start(static_cast<int>(timeout_ms));
     }
     return 0;
 }
 
-int QCurl::socket_callback(CURL *easy, curl_socket_t s, int what, QCurl *qcurl, SocketNotifiers *notifiers) {
+int QCurl::socket_callback(CURL *, curl_socket_t s, int what, QCurl *qcurl, SocketNotifiers *notifiers) {
     // 此 socket 初次出现，加入 qt 事件循环中监听 socket 事件
     if ((what == CURL_POLL_IN || what == CURL_POLL_INOUT) && (
             notifiers == nullptr || notifiers->read_notifier == nullptr)) {
@@ -101,8 +119,8 @@ int QCurl::socket_callback(CURL *easy, curl_socket_t s, int what, QCurl *qcurl, 
         notifiers->read_notifier = new QSocketNotifier(static_cast<qintptr>(s), QSocketNotifier::Read, qcurl);
 
         // socket 事件发生，通知 libcurl
-        connect(notifiers->read_notifier, &QSocketNotifier::activated, qcurl, [easy,qcurl, s]() {
-            qcurl->handleSocketAction(easy, s, CURL_CSELECT_IN);
+        connect(notifiers->read_notifier, &QSocketNotifier::activated, qcurl, [qcurl, s]() {
+            qcurl->handleSocketAction(nullptr, s, CURL_CSELECT_IN);
         });
     }
     if ((what == CURL_POLL_OUT || what == CURL_POLL_INOUT) && (
@@ -113,15 +131,15 @@ int QCurl::socket_callback(CURL *easy, curl_socket_t s, int what, QCurl *qcurl, 
         }
         notifiers->write_notifier = new QSocketNotifier(static_cast<qintptr>(s), QSocketNotifier::Write, qcurl);
 
-        connect(notifiers->write_notifier, &QSocketNotifier::activated, qcurl, [easy,qcurl, s]() {
-            qcurl->handleSocketAction(easy, s, CURL_CSELECT_OUT);
+        connect(notifiers->write_notifier, &QSocketNotifier::activated, qcurl, [qcurl, s]() {
+            qcurl->handleSocketAction(nullptr, s, CURL_CSELECT_OUT);
         });
     }
-    if (what == CURL_POLL_IN && notifiers->write_notifier != nullptr) {
-        notifiers->write_notifier->setEnabled(false);
+    if (notifiers != nullptr && notifiers->read_notifier != nullptr) {
+        notifiers->read_notifier->setEnabled(what == CURL_POLL_IN || what == CURL_POLL_INOUT);
     }
-    if (what == CURL_POLL_OUT && notifiers->read_notifier != nullptr) {
-        notifiers->read_notifier->setEnabled(true);
+    if (notifiers != nullptr && notifiers->write_notifier != nullptr) {
+        notifiers->write_notifier->setEnabled(what == CURL_POLL_OUT || what == CURL_POLL_INOUT);
     }
     if (what == CURL_POLL_REMOVE && notifiers != nullptr) {
         curl_multi_assign(qcurl->_curlm, s, nullptr);

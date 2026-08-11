@@ -82,7 +82,11 @@ void ConfigDeducer::startNextTest() {
     case ConfigDeduceState::CLASH_VERGE:
         connect(_qeasy, &ConfigAwareQEasy::testFinished, this, &ConfigDeducer::handleTestFinish);
         _state = ConfigDeduceState::CLASH_FOR_WINDOWS;
+#ifdef Q_OS_MACOS
         deduce_clash_verge();
+#else
+        startNextTest();
+#endif
         break;
     case ConfigDeduceState::CLASH_FOR_WINDOWS:
         _state = ConfigDeduceState::FINISH;

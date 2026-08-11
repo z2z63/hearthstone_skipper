@@ -11,6 +11,17 @@ ConfigAwareQEasy::ConfigAwareQEasy(ClashConfig config, QObject *parent) : QCurlE
 ConfigAwareQEasy::~ConfigAwareQEasy() = default;
 
 void ConfigAwareQEasy::test() {
+    SPDLOG_LOGGER_INFO(_logger, "controller_test begin type={} address={} unix_socket={} secret_set={}",
+                       static_cast<int>(_config.external_controller_type), _config.external_controller,
+                       _config.unix_socket, !_config.secret.empty());
+    if (isRunning()) {
+        emit testFinished(false, "skipper正在执行其他网络请求");
+        return;
+    }
+    if (_config.external_controller_type == ExternalControllerType::NONE) {
+        emit testFinished(false, "skipper未完成设置");
+        return;
+    }
     if (_config.external_controller_type == ExternalControllerType::TCPIP && _config.external_controller.empty()) {
         SPDLOG_LOGGER_INFO(_logger, "external controller is empty");
         emit testFinished(false, "skipper未完成设置");
@@ -22,12 +33,16 @@ void ConfigAwareQEasy::test() {
         return;
     }
     curl_easy_setopt(curl, CURLOPT_URL, _config.version().c_str());
+    if (!perform()) {
+        emit testFinished(false, "无法启动检测请求");
+        return;
+    }
     connect(this, &QCurlEasy::done, this, &ConfigAwareQEasy::handle_version_response, Qt::SingleShotConnection);
-    perform();
 }
 
 void ConfigAwareQEasy::handle_version_response(const QString &error, long code, const QByteArray &body) {
-    SPDLOG_LOGGER_INFO(_logger, "/version error={}, code={} response={}", error.toStdString(), code, body.toStdString());
+    SPDLOG_LOGGER_INFO(_logger, "controller_test finish error={} code={} response={}", error.toStdString(), code,
+                       body.toStdString());
     if (!error.isEmpty() || code / 100 != 2) {
 
         emit testFinished(false, fmt::format("/version error={}, code={}", error.toStdString(), code));
@@ -54,7 +69,7 @@ void ConfigAwareQEasy::changeConfig(const ClashConfig &newConfig) {
         curl_easy_setopt(curl, CURLOPT_UNIX_SOCKET_PATH, _config.unix_socket.c_str());
     }
     if (!_config.secret.empty()) {
-        const std::string header = "Authorization:Bearer " + _config.secret;
+        const std::string header = "Authorization: Bearer " + _config.secret;
         headers = curl_slist_append(nullptr, header.c_str());
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
     }

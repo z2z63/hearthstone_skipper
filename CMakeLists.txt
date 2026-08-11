@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.30)
 project(hearththone_skipper LANGUAGES CXX OBJCXX)
 
 set(CMAKE_CXX_STANDARD 20)
+option(SKIPPER_BUILD_TESTS "Build skipper unit tests" ON)
 
 if (NOT APP_VERSION)    # shallow clone 的情况下无法获取到 tag
     execute_process(
@@ -34,9 +35,11 @@ target_sources(skipper PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src/app.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/app_settings.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/clash_config.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/connection_selector.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/config_aware_qeasy.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/config_deducer.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/logger.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/local_connection.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/setting_dialog.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/skipper.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/float_button.cpp
@@ -51,9 +54,11 @@ target_sources(skipper PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/include/app.h
         ${CMAKE_CURRENT_SOURCE_DIR}/include/app_settings.h
         ${CMAKE_CURRENT_SOURCE_DIR}/include/clash_config.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/connection_selector.h
         ${CMAKE_CURRENT_SOURCE_DIR}/include/config_aware_qeasy.h
         ${CMAKE_CURRENT_SOURCE_DIR}/include/config_deducer.h
         ${CMAKE_CURRENT_SOURCE_DIR}/include/logger.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/local_connection.h
         ${CMAKE_CURRENT_SOURCE_DIR}/include/setting_dialog.h
         ${CMAKE_CURRENT_SOURCE_DIR}/include/skipper.h
         ${CMAKE_CURRENT_SOURCE_DIR}/include/float_button.h
@@ -108,7 +113,8 @@ set(USE_NGHTTP2 OFF)
 set(USE_LIBIDN2 OFF)
 FetchContent_Declare(
         libcurl
-        URL https://curl.se/download/curl-8.17.0.zip
+        URL https://github.com/curl/curl/archive/refs/tags/curl-8_17_0.tar.gz
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
 
 FetchContent_MakeAvailable(yaml-cpp spdlog libcurl)
@@ -118,6 +124,15 @@ target_link_libraries(skipper PRIVATE Qt6::Core Qt6::Gui Qt6::Widgets yaml-cpp s
 target_link_libraries(qcurl PRIVATE Qt6::Core PUBLIC CURL::libcurl)
 
 if (APPLE)
+    add_executable(skipper_native_helper
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/native_pf_helper.cpp
+    )
+    set_target_properties(skipper_native_helper PROPERTIES
+        OUTPUT_NAME "skipper-native-helper"
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/skipper.app/Contents/Helpers"
+    )
+    add_dependencies(skipper skipper_native_helper)
+
     qt_add_library(macos_specific STATIC
         ${CMAKE_CURRENT_SOURCE_DIR}/src/platform/window_listener.mm
         ${CMAKE_CURRENT_SOURCE_DIR}/include/window_listener.h
@@ -125,18 +140,25 @@ if (APPLE)
     target_compile_options(macos_specific PRIVATE "-fobjc-arc")
     target_include_directories(macos_specific PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
     target_link_libraries(macos_specific PRIVATE Qt6::Widgets spdlog "-framework Foundation -framework AppKit")
-    target_link_libraries(skipper PRIVATE macos_specific)
+    target_link_libraries(skipper PRIVATE macos_specific "-framework Security")
 endif ()
 
 install(TARGETS skipper
         BUNDLE DESTINATION .
 )
 
-qt_generate_deploy_app_script(
-        TARGET skipper
-        OUTPUT_SCRIPT deploy_script
-        NO_PLUGINS
-)
+if (Qt6_VERSION VERSION_GREATER_EQUAL 6.10)
+    qt_generate_deploy_app_script(
+            TARGET skipper
+            OUTPUT_SCRIPT deploy_script
+            NO_PLUGINS
+    )
+else ()
+    qt_generate_deploy_app_script(
+            TARGET skipper
+            OUTPUT_SCRIPT deploy_script
+    )
+endif ()
 install(SCRIPT ${deploy_script})
 target_compile_definitions(skipper PRIVATE APP_VERSION="${APP_VERSION}")
 
@@ -153,3 +175,28 @@ install(SCRIPT ${CMAKE_CURRENT_BINARY_DIR}/skipper-install.cmake)
 
 message(STATUS APP_VERSION=${APP_VERSION})
 message(STATUS QT_VERSION=${Qt6_VERSION})
+
+include(CTest)
+if (SKIPPER_BUILD_TESTS)
+    enable_testing()
+    qt_add_executable(connection_selector_test
+        test/connection_selector_test.cpp
+        src/connection_selector.cpp
+        include/connection_selector.h
+    )
+    target_include_directories(connection_selector_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+    target_link_libraries(connection_selector_test PRIVATE Qt6::Core)
+    add_test(NAME connection_selector_test COMMAND connection_selector_test)
+    if (APPLE)
+        qt_add_executable(local_connection_probe
+            test/local_connection_probe.cpp
+            src/local_connection.cpp
+            include/local_connection.h
+        )
+        target_include_directories(local_connection_probe PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+        target_link_libraries(local_connection_probe PRIVATE Qt6::Core)
+        add_test(NAME native_helper_rejects_invalid
+                 COMMAND $<TARGET_FILE:skipper_native_helper> disconnect invalid 1119 1500)
+        set_tests_properties(native_helper_rejects_invalid PROPERTIES WILL_FAIL TRUE)
+    endif ()
+endif ()

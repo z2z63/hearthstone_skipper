@@ -83,7 +83,7 @@ void FloatButton::moveToWindow(const QRect &windowRect) {
     move(x, y);
 }
 void FloatButton::onBtnClicked() {
-    SPDLOG_LOGGER_INFO(_logger,"clicked");
+    SPDLOG_LOGGER_INFO(_logger, "float_button_clicked");
     connect(
         App::skipper, &Skipper::skipFinished, this,
         [this](bool success) {

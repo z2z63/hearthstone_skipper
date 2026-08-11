@@ -14,8 +14,6 @@ int main(int argc, char *argv[]) {
     CURL *curl = curl_easy_init();
     // 创建 QCurlEasy 对象，这会自动添加到 multi handle
     QCurlEasy qcurl_easy =  QCurlEasy(curl);
-    qcurl_easy.perform();
-
     // 设置 URL
     curl_easy_setopt(curl, CURLOPT_URL, "https://google.com");
 
@@ -40,10 +38,13 @@ int main(int argc, char *argv[]) {
         app.quit();
     });
 
+    if (!qcurl_easy.perform()) {
+        qDebug() << "Unable to start request";
+        return 1;
+    }
+
     qDebug() << "Request created, waiting for response...";
 
     // 进入 Qt 事件循环，等待异步响应
     return QCoreApplication::exec();
 }
-
-
