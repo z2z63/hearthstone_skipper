@@ -1,10 +1,10 @@
 #include "logger.h"
 
-#include <QStandardPaths>
 #include <QDir>
+#include <QStandardPaths>
+#include "spdlog/sinks/dist_sink.h"
 #include "spdlog/sinks/rotating_file_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
-#include "spdlog/sinks/dist_sink.h"
 
 
 static QString initLogFilePath() {
@@ -30,8 +30,8 @@ void initLogger() {
     // 输出到日志文件
     auto regular_sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
         initLogFilePath().toStdString(),
-        1024 * 4,
-        1
+        1024 * 1024 * 2,
+        3
         );
 #ifdef SKIPPER_DEBUG
     // debug 时彩色的终端日志
@@ -46,5 +46,7 @@ void initLogger() {
     auto logger = std::make_shared<spdlog::logger>("skipper", regular_sink);
 #endif
     spdlog::register_logger(logger);
-    spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%n] [%l] [%@] %v");
+    logger->set_level(spdlog::level::info);
+    logger->flush_on(spdlog::level::info);
+    spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [thread %t] [%n] [%l] [%@] %v");
 }

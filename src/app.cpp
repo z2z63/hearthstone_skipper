@@ -8,6 +8,8 @@
 #include <QMainWindow>
 #include <QDesktopServices>
 #include <QUrl>
+#include <QCoreApplication>
+#include <QSysInfo>
 
 Skipper *App::skipper;
 App *App::_instance = nullptr;
@@ -16,19 +18,24 @@ App *App::_instance = nullptr;
 App::App(QObject *parent) : QObject(parent), trayIcon(nullptr) {
     _instance = this;
     initLogger();
+    const auto startupLogger = spdlog::get("skipper");
+    SPDLOG_LOGGER_INFO(startupLogger, "application_start version={} qt={} os={} arch={} pid={} log={}", APP_VERSION,
+                       QT_VERSION_STR, QSysInfo::prettyProductName().toStdString(),
+                       QSysInfo::currentCpuArchitecture().toStdString(), QCoreApplication::applicationPid(),
+                       getLogFilePath().toStdString());
     if (std::optional clash_config = AppSettings::instance().clash_config(); !clash_config.has_value()) {
-        qeasy = new ConfigAwareQEasy({});
+        qeasy = new ConfigAwareQEasy({}, this);
         auto *deducer = new ConfigDeducer(qeasy, this);
         skipper = new Skipper(qeasy, this);
         deducer->tryDeduce();
-        connect(deducer, &ConfigDeducer::deduceFinished, this, [this](ConfigAwareQEasy *_) {
-            if (qeasy == nullptr) {
+        connect(deducer, &ConfigDeducer::deduceFinished, this, [this](ConfigAwareQEasy *deduced) {
+            if (deduced == nullptr) {
                 return;
             }
             if (settingDialog) {
                 settingDialog->setting_tab->setHitText("skipper 设置已自动推断");
             }
-            AppSettings::instance().clash_config_set(qeasy->config());
+            AppSettings::instance().clash_config_set(deduced->config());
         });
     } else {
         qeasy = new ConfigAwareQEasy(clash_config.value(), this);

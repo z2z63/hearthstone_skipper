@@ -5,6 +5,7 @@
 enum class ExternalControllerType {
     TCPIP,
     UNIX_DOMAIN,
+    NATIVE,
     NONE
 };
 

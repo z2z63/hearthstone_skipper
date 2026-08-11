@@ -17,7 +17,8 @@ class QCurlEasy : public QObject {
 public:
     explicit QCurlEasy(CURL *curl, QObject *parent = nullptr);
     ~QCurlEasy() override;
-    void perform() const;
+    [[nodiscard]] bool perform();
+    [[nodiscard]] bool isRunning() const;
 signals:
     void done(QString error, long code, QByteArray body);
 
@@ -31,6 +32,7 @@ public:
 private:
     QByteArray data = QByteArray();
     char error_buffer[CURL_ERROR_SIZE]{};
+    bool running = false;
 
 };
 
