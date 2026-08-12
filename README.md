@@ -1,3 +1,5 @@
+
+
 ## HearthStone-Skipper 炉石传说 酒馆战旗 MacOS 一键拔线工具
 
 - 通过点击系统栏快速拔线，帮助您快速跳过战斗动画，获取更多操作时间
@@ -6,7 +8,7 @@
 
 ## 如何使用
 
-- 在 release 中下载 app，解压移动到 Application 并打开
+- 在 release 中下载 app，解压移动到 Application 并打开。**注意：应用无桌面图标（Dock Icon），请前往系统菜单栏查看。**
 - skipper 需要获取 clash 核心的`external_controller`和`secret`，并且需要 clash 核心接管炉石传说客户端的流量  
   skipper 会尝试自动推断`external_controller`和`secret`，如果无法推断，请手动填写
 - 开启 clash 的 tun 模式（或者 clash x pro 的增强模式），保证 clash 核心能够接管到炉石传说客户端的流量
@@ -52,4 +54,3 @@ root 权限，不修改网络配置，系统影响小
 
 1. 您使用的 clash 核心需要能够接管炉石传说客户端的流量
 2. MacOS（我没有使用任何平台特定功能，略加修改即可运行在 windows）
-
